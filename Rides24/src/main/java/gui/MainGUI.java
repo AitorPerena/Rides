@@ -48,7 +48,7 @@ public class MainGUI extends JFrame {
         jContentPane = new JPanel();
         jContentPane.setLayout(new GridLayout(8, 1, 0, 0));  
 
-        jLabelSelectOption = new JLabel(ResourceBundle.getBundle("Etiquetas").getString("MainGUI.SelectOption"));
+        jLabelSelectOption = new JLabel("Seleccionar opción");
         jLabelSelectOption.setFont(new Font("Tahoma", Font.BOLD, 13));
         jLabelSelectOption.setForeground(Color.BLACK);
         jLabelSelectOption.setHorizontalAlignment(SwingConstants.CENTER);
