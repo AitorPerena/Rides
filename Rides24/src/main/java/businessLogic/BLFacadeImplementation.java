@@ -69,6 +69,8 @@ public class BLFacadeImplementation  implements BLFacade {
         dbManager.close();
         return reservations;
     }
+    
+    
 	public BLFacadeImplementation()  {		
 		System.out.println("Creating BLFacadeImplementation instance");
 		
@@ -79,7 +81,81 @@ public class BLFacadeImplementation  implements BLFacade {
 
 		
 	}
+	@Override
+	public boolean confirmarReserva(Reservation reserva, String estado) {
+	    dbManager.open();
+	    try {
+	        boolean success = dbManager.confirmarReserva(reserva, estado);
+	        if (success) {
+	            System.out.println("Notificación enviada a: " + reserva.getTraveler().getEmail() + 
+	                             " - Estado: " + estado);
+	        }
+	        return success;
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        return false;
+	    } finally {
+	        dbManager.close();
+	    }
+	}
 	
+	@Override
+    public boolean addReview(User reviewer, User reviewedUser, int rating, String comment) {
+        dbManager.open();
+        try {
+        boolean ReviewSuccess = dbManager.addReview(reviewer, reviewedUser, rating, comment);
+        if(ReviewSuccess) {
+        	String message = String.format("%s te ha dejado una rese�a de %d estrellas.", reviewer.getName(), rating);
+        	boolean NotificationSuccess = dbManager.addNotification(reviewedUser, message);
+        	if(!NotificationSuccess) {
+        		System.out.println("Error al crear la notificaci�n.");
+        	}
+        }
+        return ReviewSuccess;
+        } catch (Exception e) {
+        	e.printStackTrace();
+        	return false;
+        }finally {
+        	dbManager.close();
+        }
+    }
+	
+	@Override
+    public boolean markNotificationAsRead(Integer notificationId) {
+        dbManager.open();
+        try {
+            boolean success = dbManager.markNotificationAsRead(notificationId);
+            return success;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        } finally {
+            dbManager.close();
+        }
+    }
+	
+	@Override
+	public List<Review> getReviewsForUser(User user) {
+	    dbManager.open(); 
+	        List<Review> reviews = dbManager.getReviewsForUser(user);
+	        dbManager.close(); 
+	        return reviews;
+	}
+	@Override
+    public List<Notification> getNotificationsForUser(User user) {
+        dbManager.open();
+        List<Notification> notifications = dbManager.getNotificationsForUser(user);
+        dbManager.close();
+        return notifications;
+    }
+	
+	@Override
+    public List<User> getAllUsers() {
+        dbManager.open();
+        List<User> users = dbManager.getAllUsers();
+        dbManager.close();
+        return users;
+    }
     public BLFacadeImplementation(DataAccess da)  {
 		
 		System.out.println("Creating BLFacadeImplementation instance with DataAccess parameter");

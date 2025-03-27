@@ -111,6 +111,12 @@ public class Ride implements Serializable {
     public void addReservation(Reservation reservation) {
         this.reservations.add(reservation);
     }
+    public void reducirAsientos(int asientos) {
+        if (this.nPlaces >= asientos) {
+            this.nPlaces -= asientos;
+        } else {
+            throw new IllegalArgumentException("No hay suficientes asientos disponibles.");
+        }}
 
     @Override
     public String toString() {

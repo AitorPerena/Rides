@@ -30,7 +30,25 @@ public interface BLFacade  {
     public List<Reservation> getReservations(Driver driver); 
     @WebMethod
     public List<Ride> getAvailableRides();
-	/**
+    
+    @WebMethod
+    public boolean confirmarReserva(Reservation reserva, String estado);
+    @WebMethod
+	public List<Review> getReviewsForUser(User user);
+
+	@WebMethod
+	public List<Notification> getNotificationsForUser(User user);
+	@WebMethod
+    public List<User> getAllUsers();
+    
+    @WebMethod
+    public boolean addReview(User reviewer, User reviewedUser, int rating, String comment);
+    
+    @WebMethod
+    public boolean markNotificationAsRead(Integer notificationId);
+    
+	
+    /**
 	 * This method returns all the cities where rides depart 
 	 * @return collection of cities
 	 */

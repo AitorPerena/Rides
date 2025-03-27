@@ -26,9 +26,7 @@ import domain.Traveler;
 import exceptions.RideAlreadyExistException;
 import exceptions.RideMustBeLaterThanTodayException;
 
-/**
- * It implements the data access to the objectDb database
- */
+
 public class DataAccess  {
 	private  EntityManager  db;
 	private  EntityManagerFactory emf;
@@ -261,6 +259,7 @@ public class DataAccess  {
 	 	return res;
 	}
 	
+	
 	/**
 	 * This method retrieves from the database the dates a month for which there are events
 	 * @param from the origin location of a ride
@@ -288,6 +287,130 @@ public class DataAccess  {
 		  }
 	 	return res;
 	}
+	public boolean confirmarReserva(Reservation reserva, String estado) {
+	    db.getTransaction().begin();
+	    try {
+
+	        Reservation managedReserva = db.merge(reserva);
+	        managedReserva.setStatus(estado);
+	        
+	        if ("Confirmed".equals(estado)) {
+	            Ride ride = managedReserva.getRide();
+	            ride.reducirAsientos(managedReserva.getSeats());
+	            db.merge(ride);
+	        }
+	        
+	        ReservaConfirmada reservaConfirmada = new ReservaConfirmada(
+	            managedReserva.getTraveler(),
+	            managedReserva.getRide(),
+	            new Date(),
+	            estado
+	        );
+	        db.persist(reservaConfirmada);
+	        
+	        db.getTransaction().commit();
+	        return true;
+	    } catch (Exception e) {
+	        if (db.getTransaction().isActive()) {
+	            db.getTransaction().rollback();
+	        }
+	        e.printStackTrace();
+	        return false;
+	    }
+	}
+	
+	public boolean addReview(User reviewer, User reviewedUser, int rating, String comment) {
+		db.getTransaction().begin();
+	    if (reviewer == null || reviewedUser == null || comment == null || rating < 1 || rating > 5) {
+	        throw new IllegalArgumentException("Par�metros no v�lidos para la rese�a");
+	    }
+
+	    
+	    try {
+	        Review review = new Review(reviewer, reviewedUser, rating, comment);
+	        db.persist(review);
+	        db.getTransaction().commit();
+	        return true;
+	    } catch (Exception e) {
+	        if (db.getTransaction().isActive()) {
+	            db.getTransaction().rollback(); 
+	        }
+	        e.printStackTrace();
+	        return false;
+	    }
+	}
+	
+	public boolean markNotificationAsRead(Integer notificationId) {
+	    db.getTransaction().begin();
+	    try {
+	        Notification notification = db.find(Notification.class, notificationId);
+	        if (notification != null) {
+	            notification.setRead(true);
+	            db.merge(notification);
+	            db.getTransaction().commit();
+	            return true;
+	        }
+	        return false;
+	    } catch (Exception e) {
+	        if (db.getTransaction().isActive()) {
+	            db.getTransaction().rollback();
+	        }
+	        e.printStackTrace();
+	        return false;
+	    }
+	}
+
+    public boolean addNotification(User user, String message) {
+    	db.getTransaction().begin();
+    	try {
+            Notification notification = new Notification(user, message);
+            db.persist(notification);
+            db.getTransaction().commit();
+            return true;
+    	} catch (Exception e) {
+	        if (db.getTransaction().isActive()) {
+	            db.getTransaction().rollback(); 
+	        }
+	        e.printStackTrace();
+	        return false;
+        }
+    }
+    
+    public List<Review> getReviewsForUser(User user) {
+	    try {
+	        TypedQuery<Review> query = db.createQuery(
+	            "SELECT r FROM Review r WHERE r.reviewedUser = :user", Review.class
+	        );
+	        query.setParameter("user", user);
+	        return query.getResultList();
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        return new ArrayList<>();
+	    }
+	} 
+public List<Notification> getNotificationsForUser(User user) {
+    try {
+    	TypedQuery<Notification> query = db.createQuery(
+             "SELECT n FROM Notification n WHERE n.user = :user", Notification.class
+        );
+        query.setParameter("user", user);
+        return query.getResultList();
+    }catch (Exception e) {
+        e.printStackTrace();
+        return new ArrayList<>();
+    }
+}
+
+public List<User> getAllUsers() {
+    try {
+        TypedQuery<User> query = db.createQuery("SELECT u FROM User u", User.class);
+        return query.getResultList();
+    }catch (Exception e) {
+        e.printStackTrace();
+        return new ArrayList<>();
+    }
+}
+
 	
 
 public void open(){
