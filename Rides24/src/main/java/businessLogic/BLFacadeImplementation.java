@@ -40,13 +40,14 @@ public class BLFacadeImplementation  implements BLFacade {
 	    return null;
 	}
 
-    @Override
-    public boolean register(String email, String password, String role) {
-        dbManager.open();
-        boolean success = dbManager.addUser(email, password, role);
-        dbManager.close();
-        return success;
-    }
+	@Override
+	public boolean register(String email, String password, String name, String role) {
+	    dbManager.open();
+	    boolean success = dbManager.addUser(email, password, name, role);
+	    dbManager.close();
+	    return success;
+	}
+
     
 
     public void sendRideReminders(Date rideDate) {
@@ -54,14 +55,14 @@ public class BLFacadeImplementation  implements BLFacade {
         try {
             // Usamos tu método existente getRidesBetweenDates
             List<Ride> rides = dbManager.getRidesBetweenDates(
-                UtilDate.trim(rideDate), // Fecha inicio (usando tu UtilDate)
+                UtilDate.trim(rideDate), // Fecha inicio (UtilDate)
                 UtilDate.addDays(rideDate, 1) // Fecha fin (día siguiente)
             );
 
             for (Ride ride : rides) {
                 // Notificación para conductor
                 String driverMsg = String.format(
-                    "Recordatorio: Tienes un viaje programado para %1$te de %1$tB a las %1$tR",
+                    "Recordatorio: Tienes un viaje programado para %1$te de %1$tB",
                     ride.getDate()
                 );
                 dbManager.addNotification(ride.getDriver(), driverMsg);
@@ -69,7 +70,7 @@ public class BLFacadeImplementation  implements BLFacade {
                 // Notificaciones para viajeros
                 for (Reservation res : ride.getReservations()) {
                     String travelerMsg = String.format(
-                        "Recordatorio: Viaje a %s el %1$te/%1$tm a las %1$tR. Punto de encuentro: %s",
+                        "Recordatorio: Viaje a %s el %1$te/%1$tm",
                         ride.getTo(),
                         ride.getFrom()
                     );
@@ -88,13 +89,9 @@ public class BLFacadeImplementation  implements BLFacade {
             // Crear la reserva
             boolean success = dbManager.addReservation(traveler, ride, seats, "Pending");
             if (success) {
-	            System.out.println("Notificación enviada a: " + ride.getDriver().getEmail() + 
-	                             " - Estado: Pendiente");
 	            String message = String.format("%s ha enviado una solicitud de reserva.", traveler);
-	        	boolean NotificationSuccess = dbManager.addNotification(ride.getDriver(), message);
-	        	if(!NotificationSuccess) {
-	        		System.out.println("Error al crear la notificación.");
-	        	}
+	            dbManager.addNotification(ride.getDriver(), message);
+
             }
             return success;
         } catch (Exception e) {
@@ -129,14 +126,14 @@ public class BLFacadeImplementation  implements BLFacade {
 	    dbManager.open();
 	    try {
 	        boolean success = dbManager.confirmarReserva(reserva, estado);
-	        if (success) {
-	            System.out.println("Notificación enviada a: " + reserva.getTraveler().getEmail() + 
-	                             " - Estado: " + estado);
+	        if (estado == "Confirmed") {
 	            String message = String.format("%s ha aceptado tu solicitud de reserva.", reserva.getRide().getDriver().getEmail());
-	        	boolean NotificationSuccess = dbManager.addNotification(reserva.getTraveler(), message);
-	        	if(!NotificationSuccess) {
-	        		System.out.println("Error al crear la notificación.");
-	        	}
+	            dbManager.addNotification(reserva.getTraveler(), message);
+
+	        }
+	        else if(estado == "Declined") {
+	        	String message = String.format("%s ha rechazado tu solicitud de reserva.", reserva.getRide().getDriver().getEmail());
+	            dbManager.addNotification(reserva.getTraveler(), message);
 	        }
 	        return success;
 	    } catch (Exception e) {
@@ -146,6 +143,7 @@ public class BLFacadeImplementation  implements BLFacade {
 	        dbManager.close();
 	    }
 	}
+	
 	
 	@Override
     public boolean addReview(User reviewer, User reviewedUser, int rating, String comment) {

@@ -21,7 +21,7 @@ public interface BLFacade  {
     public User login(String email, String password);
 
 	@WebMethod
-	public boolean register(String email, String password, String role);
+	public boolean register(String email, String password, String name, String role);
 
     @WebMethod
     public boolean requestReservation(Ride ride, Traveler traveler, int seats);
@@ -41,6 +41,7 @@ public interface BLFacade  {
 	@WebMethod
     public List<User> getAllUsers();
     
+	
     @WebMethod
     public boolean addReview(User reviewer, User reviewedUser, int rating, String comment);
     

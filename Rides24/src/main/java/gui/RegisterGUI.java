@@ -4,66 +4,99 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.ResourceBundle;
 
 import businessLogic.BLFacade;
 
 public class RegisterGUI extends JFrame {
-	private JTextField nameField;
+    private static final long serialVersionUID = 1L;
+    
+    private JTextField nameField;
     private JTextField emailField;
     private JPasswordField passwordField;
     private JComboBox<String> roleComboBox;
     private JButton registerButton;
+    
+    private JLabel jLabelName = new JLabel();
+    private JLabel jLabelEmail = new JLabel();
+    private JLabel jLabelPassword = new JLabel();
+    private JLabel jLabelRole = new JLabel();
+    
+    private ResourceBundle bundle;
 
     public RegisterGUI() {
-        setTitle("Registro de Usuario");
-        setSize(300, 250);  // Aumentamos el tamaño para acomodar el nuevo campo
-        setLayout(new GridLayout(5, 2));  // Ajustamos el layout para 5 filas
+        this.bundle = ResourceBundle.getBundle("Etiquetas");
+        initializeUI();
+    }
 
-        add(new JLabel("Nombre"));
+    private void initializeUI() {
+        setTitle(bundle.getString("RegisterGUI.Title"));
+        setSize(300, 250);
+        setLayout(new GridLayout(5, 2));
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        setLocationRelativeTo(null);
+
+
+        jLabelName.setText(bundle.getString("RegisterGUI.Name"));
         nameField = new JTextField();
-        add(nameField);
-        add(new JLabel("Email:"));
+        
+        jLabelEmail.setText(bundle.getString("RegisterGUI.Email"));
         emailField = new JTextField();
-        add(emailField);
-
-        add(new JLabel("Contraseña:"));
+        
+        jLabelPassword.setText(bundle.getString("RegisterGUI.Password"));
         passwordField = new JPasswordField();
-        add(passwordField);
-
-        // Selección de rol
-        add(new JLabel("Rol:"));
+        
+        jLabelRole.setText(bundle.getString("RegisterGUI.Role"));
         roleComboBox = new JComboBox<>(new String[]{"Traveler", "Driver"});
-        add(roleComboBox);
-
-        // Botón de registro
-        registerButton = new JButton("Registrarse");
+        
+        registerButton = new JButton(bundle.getString("RegisterGUI.Submit"));
         registerButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-            	String name = nameField.getText();
-                String email = emailField.getText();
-                String password = new String(passwordField.getPassword());
-                String role = (String) roleComboBox.getSelectedItem();
-
-                if (email.isEmpty() || password.isEmpty()) {
-                    JOptionPane.showMessageDialog(RegisterGUI.this, "Email y contraseña son obligatorios", "Error", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-
-                // Llamar a la lógica de negocio para registrar al usuario
-                BLFacade facade = MainGUI.getBusinessLogic();
-                boolean success = facade.register(email, password, role);
-
-                if (success) {
-                    JOptionPane.showMessageDialog(RegisterGUI.this, "Registro exitoso", "Éxito", JOptionPane.INFORMATION_MESSAGE);
-                    dispose();  // Cerrar la ventana de registro
-                } else {
-                    JOptionPane.showMessageDialog(RegisterGUI.this, "Error en el registro", "Error", JOptionPane.ERROR_MESSAGE);
-                }
+                registerAction();
             }
         });
-        add(registerButton);
 
-        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        setLocationRelativeTo(null);  // Centrar la ventana en la pantalla
+ 
+        add(jLabelName);
+        add(nameField);
+        add(jLabelEmail);
+        add(emailField);
+        add(jLabelPassword);
+        add(passwordField);
+        add(jLabelRole);
+        add(roleComboBox);
+        add(new JLabel());
+        add(registerButton);
+    }
+
+    private void registerAction() {
+        String name = nameField.getText();
+        String email = emailField.getText();
+        String password = new String(passwordField.getPassword());
+        String role = (String) roleComboBox.getSelectedItem();
+
+        if (email.isEmpty() || password.isEmpty()) {
+            JOptionPane.showMessageDialog(RegisterGUI.this, 
+                bundle.getString("RegisterGUI.ErrorEmpty"),
+                bundle.getString("Error"), 
+                JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        BLFacade facade = MainGUI.getBusinessLogic();
+        boolean success = facade.register(email, password, name, role);
+
+        if (success) {
+            JOptionPane.showMessageDialog(RegisterGUI.this, 
+                bundle.getString("RegisterGUI.Success"),
+                bundle.getString("Success"), 
+                JOptionPane.INFORMATION_MESSAGE);
+            dispose();
+        } else {
+            JOptionPane.showMessageDialog(RegisterGUI.this, 
+                bundle.getString("RegisterGUI.Error"),
+                bundle.getString("Error"), 
+                JOptionPane.ERROR_MESSAGE);
+        }
     }
 }

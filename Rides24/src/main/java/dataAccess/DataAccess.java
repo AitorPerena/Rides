@@ -39,29 +39,30 @@ public class DataAccess  {
 	    return user;
 	}
 
-	public boolean addUser(String email, String password, String role) {
+	public boolean addUser(String email, String password, String name, String role) {
 	    db.getTransaction().begin();
 	    try {
 	        User user;
-	        if (role.equals("Driver")) {
-	            user = new Driver(email, password);
-	        } else if (role.equals("Traveler")) {
-	            user = new Traveler(email, password);
+	        if (role.equalsIgnoreCase("Driver")) {
+	            user = new Driver(email, password, name);
+	        } else if (role.equalsIgnoreCase("Traveler")) {
+	            user = new Traveler(email, password, name);
 	        } else {
 	            throw new IllegalArgumentException("Rol no válido");
 	        }
-	        db.persist(user); 
-	        db.getTransaction().commit();
 
+	        db.persist(user);
+	        db.getTransaction().commit();
 	        return true;
 	    } catch (Exception e) {
 	        if (db.getTransaction().isActive()) {
-	            db.getTransaction().rollback(); 
+	            db.getTransaction().rollback();
 	        }
 	        e.printStackTrace();
 	        return false;
 	    }
 	}
+
 
 	public boolean addReservation(Traveler traveler, Ride ride, int seats, String status) {
 	    db.getTransaction().begin();
@@ -137,13 +138,11 @@ public class DataAccess  {
 		   int year=today.get(Calendar.YEAR);
 		   if (month==12) { month=1; year+=1;}  
 	    
-		   
-		    //Create drivers 
-			Driver driver1=new Driver("driver1@gmail.com","Aitor Fernandez");
-			Driver driver2=new Driver("driver2@gmail.com","Ane Gaztañaga");
-			Driver driver3=new Driver("driver3@gmail.com","Test driver");
+		   Driver driver1 = new Driver("driver1@gmail.com", "123", "Aitor Fernandez");
+		   Driver driver2 = new Driver("driver2@gmail.com", "456", "Ane Gaztañaga");
+		   Driver driver3 = new Driver("driver3@gmail.com", "789", "Test driver");
 
-			
+
 			//Create rides
 			driver1.addRide("Donostia", "Bilbo", UtilDate.newDate(year,month,15), 4, 7);
 			driver1.addRide("Donostia", "Gazteiz", UtilDate.newDate(year,month,6), 4, 8);
@@ -322,7 +321,7 @@ public class DataAccess  {
 	public boolean addReview(User reviewer, User reviewedUser, int rating, String comment) {
 		db.getTransaction().begin();
 	    if (reviewer == null || reviewedUser == null || comment == null || rating < 1 || rating > 5) {
-	        throw new IllegalArgumentException("Par�metros no v�lidos para la rese�a");
+	        throw new IllegalArgumentException("Parámetros no válidos para la reseña");
 	    }
 
 	    
@@ -402,14 +401,14 @@ public List<Notification> getNotificationsForUser(User user) {
 }
 
 public List<User> getAllUsers() {
-    try {
-        TypedQuery<User> query = db.createQuery("SELECT u FROM User u", User.class);
+        TypedQuery<User> query = db.createQuery(
+            "SELECT u FROM User u", User.class);
         return query.getResultList();
-    }catch (Exception e) {
-        e.printStackTrace();
-        return new ArrayList<>();
-    }
+    
 }
+
+
+
 
 /**
  * Obtiene los viajes entre dos fechas (inclusive)

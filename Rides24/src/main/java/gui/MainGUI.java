@@ -27,9 +27,9 @@ public class MainGUI extends JFrame {
     private JButton jButtonViewNotifications; 
 
     protected JLabel jLabelSelectOption;
-    private JRadioButton rdbtnNewRadioButton;
-    private JRadioButton rdbtnNewRadioButton_1;
-    private JRadioButton rdbtnNewRadioButton_2;
+    private JRadioButton rdbtnEnglish;
+    private JRadioButton rdbtnEuskara;
+    private JRadioButton rdbtnCastellano;
     private JPanel panel;
     private final ButtonGroup buttonGroup = new ButtonGroup();
 
@@ -50,6 +50,8 @@ public class MainGUI extends JFrame {
         jContentPane = new JPanel();
         jContentPane.setLayout(new GridLayout(10, 1, 0, 0)); 
 
+
+        
         jLabelSelectOption = new JLabel("Seleccionar opción");
         jLabelSelectOption.setFont(new Font("Tahoma", Font.BOLD, 13));
         jLabelSelectOption.setForeground(Color.BLACK);
@@ -67,7 +69,7 @@ public class MainGUI extends JFrame {
             registerGUI.setVisible(true);
         });
 
-        jButtonCreateRide = new JButton(ResourceBundle.getBundle("Etiquetas").getString("MainGUI.CreateRide"));
+        jButtonCreateRide = new JButton("Crear Viaje");
         jButtonCreateRide.addActionListener(e -> {
             if (loggedInUser instanceof Driver) {
                 JFrame createRideGUI = new CreateRideGUI((Driver) loggedInUser);
@@ -75,7 +77,7 @@ public class MainGUI extends JFrame {
             }
         });
 
-        jButtonQueryRides = new JButton(ResourceBundle.getBundle("Etiquetas").getString("MainGUI.QueryRides"));
+        jButtonQueryRides = new JButton("Consultar Viajes");
         jButtonQueryRides.addActionListener(e -> {
             JFrame findRidesGUI = new FindRidesGUI();
             findRidesGUI.setVisible(true);
@@ -114,17 +116,42 @@ public class MainGUI extends JFrame {
         });
 
         panel = new JPanel();
-        rdbtnNewRadioButton = new JRadioButton("English");
-        rdbtnNewRadioButton_1 = new JRadioButton("Euskara");
-        rdbtnNewRadioButton_2 = new JRadioButton("Castellano");
+        rdbtnEnglish = new JRadioButton("English");
+        rdbtnEuskara = new JRadioButton("Euskara");
+        rdbtnCastellano = new JRadioButton("Castellano");
+        Locale.setDefault(new Locale("es"));
+        Locale currentLocale = Locale.getDefault();
+        ResourceBundle bundle = ResourceBundle.getBundle("Etiquetas", currentLocale);
+        if (currentLocale.getLanguage().equals("eus")) {
+            rdbtnEuskara.setSelected(true);
+        } else if (currentLocale.getLanguage().equals("es")) {
+            rdbtnCastellano.setSelected(true);
+        } else {
+            rdbtnEnglish.setSelected(true);
+        }
 
-        buttonGroup.add(rdbtnNewRadioButton);
-        buttonGroup.add(rdbtnNewRadioButton_1);
-        buttonGroup.add(rdbtnNewRadioButton_2);
+        buttonGroup.add(rdbtnEnglish);
+        buttonGroup.add(rdbtnEuskara);
+        buttonGroup.add(rdbtnCastellano);
 
-        panel.add(rdbtnNewRadioButton_1);
-        panel.add(rdbtnNewRadioButton_2);
-        panel.add(rdbtnNewRadioButton);
+        rdbtnEnglish.addActionListener(e -> {
+            Locale.setDefault(new Locale("en"));
+            paintAgain();
+        });
+
+        rdbtnEuskara.addActionListener(e -> {
+            Locale.setDefault(new Locale("eus"));
+            paintAgain();
+        });
+
+        rdbtnCastellano.addActionListener(e -> {
+            Locale.setDefault(new Locale("es"));
+            paintAgain();
+        });
+
+        panel.add(rdbtnEuskara);
+        panel.add(rdbtnCastellano);
+        panel.add(rdbtnEnglish);
 
         jContentPane.add(jLabelSelectOption);
         jContentPane.add(jButtonLogin);
@@ -136,7 +163,6 @@ public class MainGUI extends JFrame {
         jContentPane.add(jButtonAddReview);
         jContentPane.add(jButtonViewNotifications);
         jContentPane.add(panel);
-
  
         setContentPane(jContentPane);
         setTitle(ResourceBundle.getBundle("Etiquetas").getString("MainGUI.MainTitle") + 
@@ -171,11 +197,22 @@ public class MainGUI extends JFrame {
         jButtonViewNotifications.setEnabled(isLoggedIn);
     }
 
-    private void paintAgain() {
-        jLabelSelectOption.setText(ResourceBundle.getBundle("Etiquetas").getString("MainGUI.SelectOption"));
-        jButtonQueryRides.setText(ResourceBundle.getBundle("Etiquetas").getString("MainGUI.QueryRides"));
+     private void paintAgain() {
+        ResourceBundle bundle = ResourceBundle.getBundle("Etiquetas");
+        
+        jLabelSelectOption.setText(bundle.getString("MainGUI.SelectOption"));
+        jButtonCreateRide.setText(bundle.getString("MainGUI.CreateRide"));
+        jButtonQueryRides.setText(bundle.getString("MainGUI.QueryRides"));
+        jButtonRequestRide.setText(bundle.getString("MainGUI.RequestRide"));
+        jButtonViewReservations.setText(bundle.getString("MainGUI.ViewReservations"));
+        jButtonAddReview.setText(bundle.getString("MainGUI.AddReview"));
+        jButtonViewNotifications.setText(bundle.getString("MainGUI.ViewNotifications"));
+        jButtonLogin.setText(bundle.getString("MainGUI.Login"));
+        jButtonRegister.setText(bundle.getString("MainGUI.Register"));
+        
         jButtonCreateRide.setText(ResourceBundle.getBundle("Etiquetas").getString("MainGUI.CreateRide"));
         this.setTitle(ResourceBundle.getBundle("Etiquetas").getString("MainGUI.MainTitle") + 
                      " - Usuario: " + (loggedInUser != null ? loggedInUser.getEmail() : "No autenticado"));
+        
     }
 }
