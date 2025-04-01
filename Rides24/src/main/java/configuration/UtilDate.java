@@ -19,6 +19,13 @@ public class UtilDate {
 		return calendar.getTime();
 	}
 	
+	public static Date addDays(Date date, int days) {
+	    Calendar cal = Calendar.getInstance();
+	    cal.setTime(date);
+	    cal.add(Calendar.DAY_OF_MONTH, days);
+	    return cal.getTime();
+	}
+	
 	public static Date newDate(int year,int month,int day) {
 
 	     Calendar calendar = Calendar.getInstance();

@@ -177,8 +177,9 @@ public class CreateRideGUI extends JFrame {
 				float price = Float.parseFloat(jTextFieldPrice.getText());
 
 				Ride r=facade.createRide(fieldOrigin.getText(), fieldDestination.getText(), UtilDate.trim(jCalendar.getDate()), inputSeats, price, driver.getEmail());
+				facade.sendRideReminders(jCalendar.getDate());
 				jLabelMsg.setText(ResourceBundle.getBundle("Etiquetas").getString("CreateRideGUI.RideCreated"));
-
+				
 			} catch (RideMustBeLaterThanTodayException e1) {
 				// TODO Auto-generated catch block
 				jLabelMsg.setText(e1.getMessage());

@@ -9,6 +9,7 @@ import javax.jws.WebMethod;
 import javax.jws.WebService;
 
 import configuration.ConfigXML;
+import configuration.UtilDate;
 import dataAccess.DataAccess;
 import domain.*;
 import exceptions.RideMustBeLaterThanTodayException;
@@ -46,7 +47,40 @@ public class BLFacadeImplementation  implements BLFacade {
         dbManager.close();
         return success;
     }
+    
 
+    public void sendRideReminders(Date rideDate) {
+        dbManager.open();
+        try {
+            // Usamos tu método existente getRidesBetweenDates
+            List<Ride> rides = dbManager.getRidesBetweenDates(
+                UtilDate.trim(rideDate), // Fecha inicio (usando tu UtilDate)
+                UtilDate.addDays(rideDate, 1) // Fecha fin (día siguiente)
+            );
+
+            for (Ride ride : rides) {
+                // Notificación para conductor
+                String driverMsg = String.format(
+                    "Recordatorio: Tienes un viaje programado para %1$te de %1$tB a las %1$tR",
+                    ride.getDate()
+                );
+                dbManager.addNotification(ride.getDriver(), driverMsg);
+
+                // Notificaciones para viajeros
+                for (Reservation res : ride.getReservations()) {
+                    String travelerMsg = String.format(
+                        "Recordatorio: Viaje a %s el %1$te/%1$tm a las %1$tR. Punto de encuentro: %s",
+                        ride.getTo(),
+                        ride.getFrom()
+                    );
+                    dbManager.addNotification(res.getTraveler(), travelerMsg);
+                }
+            }
+        } finally {
+            dbManager.close();
+        }
+    }
+    
     @Override
     public boolean requestReservation(Ride ride, Traveler traveler, int seats) {
         dbManager.open();
@@ -56,7 +90,7 @@ public class BLFacadeImplementation  implements BLFacade {
             if (success) {
 	            System.out.println("Notificación enviada a: " + ride.getDriver().getEmail() + 
 	                             " - Estado: Pendiente");
-	            String message = String.format("%s ha aceptado tu solicitud de reserva.", ride.getDriver());
+	            String message = String.format("%s ha enviado una solicitud de reserva.", traveler);
 	        	boolean NotificationSuccess = dbManager.addNotification(ride.getDriver(), message);
 	        	if(!NotificationSuccess) {
 	        		System.out.println("Error al crear la notificación.");
@@ -98,7 +132,7 @@ public class BLFacadeImplementation  implements BLFacade {
 	        if (success) {
 	            System.out.println("Notificación enviada a: " + reserva.getTraveler().getEmail() + 
 	                             " - Estado: " + estado);
-	            String message = String.format("%s ha aceptado tu solicitud de reserva.", reserva.getTraveler());
+	            String message = String.format("%s ha aceptado tu solicitud de reserva.", reserva.getRide().getDriver().getEmail());
 	        	boolean NotificationSuccess = dbManager.addNotification(reserva.getTraveler(), message);
 	        	if(!NotificationSuccess) {
 	        		System.out.println("Error al crear la notificación.");

@@ -70,6 +70,7 @@ public class RequestRideGUI extends JFrame {
 
             boolean success = facade.requestReservation(selectedRide, traveler, seats);
             if (success) {
+            	 facade.sendRideReminders(selectedRide.getDate());
                 JOptionPane.showMessageDialog(this, "Reserva solicitada con éxito");
             } else {
                 JOptionPane.showMessageDialog(this, "Error al solicitar la reserva");

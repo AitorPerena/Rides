@@ -411,6 +411,42 @@ public List<User> getAllUsers() {
     }
 }
 
+/**
+ * Obtiene los viajes entre dos fechas (inclusive)
+ * @param startDate Fecha de inicio (se considera desde 00:00:00)
+ * @param endDate Fecha de fin (se considera hasta 23:59:59)
+ * @return Lista de viajes en ese rango de fechas
+ */
+public List<Ride> getRidesBetweenDates(Date startDate, Date endDate) {
+    try {
+        // Aseguramos que las fechas estén "recortadas" sin hora/minutos/segundos
+        Date trimmedStart = UtilDate.trim(startDate);
+        Date trimmedEnd = UtilDate.trim(endDate);
+        
+        // Ajustamos la fecha final para incluir todo el día
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(trimmedEnd);
+        cal.set(Calendar.HOUR_OF_DAY, 23);
+        cal.set(Calendar.MINUTE, 59);
+        cal.set(Calendar.SECOND, 59);
+        Date endOfDay = cal.getTime();
+        
+        // Consulta JPA
+        TypedQuery<Ride> query = db.createQuery(
+            "SELECT r FROM Ride r WHERE r.date BETWEEN :startDate AND :endDate ORDER BY r.date ASC",
+            Ride.class
+        );
+        
+        query.setParameter("startDate", trimmedStart);
+        query.setParameter("endDate", endOfDay);
+        
+        return query.getResultList();
+    } catch (Exception e) {
+        e.printStackTrace();
+        return new ArrayList<>(); // Devuelve lista vacía en caso de error
+    }
+}
+
 	
 
 public void open(){

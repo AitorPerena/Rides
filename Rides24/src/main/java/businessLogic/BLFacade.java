@@ -47,6 +47,9 @@ public interface BLFacade  {
     @WebMethod
     public boolean markNotificationAsRead(Integer notificationId);
     
+    @WebMethod
+	void sendRideReminders(Date rideDate);
+    
 	
     /**
 	 * This method returns all the cities where rides depart 
