@@ -53,6 +53,15 @@ public class BLFacadeImplementation  implements BLFacade {
         try {
             // Crear la reserva
             boolean success = dbManager.addReservation(traveler, ride, seats, "Pending");
+            if (success) {
+	            System.out.println("Notificación enviada a: " + ride.getDriver().getEmail() + 
+	                             " - Estado: Pendiente");
+	            String message = String.format("%s ha aceptado tu solicitud de reserva.", ride.getDriver());
+	        	boolean NotificationSuccess = dbManager.addNotification(ride.getDriver(), message);
+	        	if(!NotificationSuccess) {
+	        		System.out.println("Error al crear la notificación.");
+	        	}
+            }
             return success;
         } catch (Exception e) {
             e.printStackTrace();
@@ -89,6 +98,11 @@ public class BLFacadeImplementation  implements BLFacade {
 	        if (success) {
 	            System.out.println("Notificación enviada a: " + reserva.getTraveler().getEmail() + 
 	                             " - Estado: " + estado);
+	            String message = String.format("%s ha aceptado tu solicitud de reserva.", reserva.getTraveler());
+	        	boolean NotificationSuccess = dbManager.addNotification(reserva.getTraveler(), message);
+	        	if(!NotificationSuccess) {
+	        		System.out.println("Error al crear la notificación.");
+	        	}
 	        }
 	        return success;
 	    } catch (Exception e) {
@@ -105,10 +119,10 @@ public class BLFacadeImplementation  implements BLFacade {
         try {
         boolean ReviewSuccess = dbManager.addReview(reviewer, reviewedUser, rating, comment);
         if(ReviewSuccess) {
-        	String message = String.format("%s te ha dejado una rese�a de %d estrellas.", reviewer.getName(), rating);
+        	String message = String.format("%s te ha dejado una reseña de %d estrellas.", reviewer.getName(), rating);
         	boolean NotificationSuccess = dbManager.addNotification(reviewedUser, message);
         	if(!NotificationSuccess) {
-        		System.out.println("Error al crear la notificaci�n.");
+        		System.out.println("Error al crear la notificación.");
         	}
         }
         return ReviewSuccess;

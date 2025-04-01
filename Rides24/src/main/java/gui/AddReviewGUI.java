@@ -19,7 +19,7 @@ public class AddReviewGUI extends JFrame {
 
     public AddReviewGUI(User loggedInUser) {
         this.loggedInUser = loggedInUser;
-        setTitle("A�adir Rese�a");
+        setTitle("Añadir Reseña");
         setSize(400, 300);
         setLayout(new GridLayout(5, 1));
 
@@ -31,18 +31,18 @@ public class AddReviewGUI extends JFrame {
                 userComboBox.addItem(user);
             }
         }
-        add(new JLabel("Selecciona el usuario a rese�ar:"));
+        add(new JLabel("Selecciona el usuario a reseñar:"));
         add(userComboBox);
 
         ratingSpinner = new JSpinner(new SpinnerNumberModel(5, 1, 5, 1));
-        add(new JLabel("Puntuaci�n (1-5):"));
+        add(new JLabel("Puntuación (1-5):"));
         add(ratingSpinner);
 
         commentArea = new JTextArea();
         add(new JLabel("Comentario:"));
         add(new JScrollPane(commentArea));
 
-        submitButton = new JButton("Enviar Rese�a");
+        submitButton = new JButton("Enviar Reseña");
         submitButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 User reviewedUser = (User) userComboBox.getSelectedItem();
