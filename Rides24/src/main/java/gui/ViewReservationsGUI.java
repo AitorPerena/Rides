@@ -5,6 +5,8 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.text.SimpleDateFormat;
 import java.util.List;
+import java.util.ResourceBundle;
+
 import businessLogic.BLFacade;
 import domain.Driver;
 import domain.Reservation;
@@ -14,9 +16,11 @@ public class ViewReservationsGUI extends JFrame {
     private JButton btnConfirmar;
     private JButton btnRechazar;
     private Driver driver;
-    private DefaultTableModel model; // Movemos el modelo como atributo de clase
+    private DefaultTableModel model;
+    private ResourceBundle bundle;
 
     public ViewReservationsGUI(Driver driver) {
+        this.bundle = ResourceBundle.getBundle("Etiquetas");
         this.driver = driver;
         setTitle("Solicitudes de Reserva - Conductor: " + driver.getEmail());
         setSize(800, 400);
@@ -37,11 +41,11 @@ public class ViewReservationsGUI extends JFrame {
         tableReservas = new JTable(model);
         
         // Botón de confirmación
-        btnConfirmar = new JButton("Confirmar Reserva");
+        btnConfirmar = new JButton(bundle.getString("ViewReservationsGUI.Accept"));
         btnConfirmar.addActionListener(e -> confirmarReserva());
         
         // Botón de rechazo
-        btnRechazar = new JButton("Rechazar Reserva");
+        btnRechazar = new JButton(bundle.getString("ViewReservationsGUI.Decline"));
         btnRechazar.addActionListener(e -> rechazarReserva());
 
         // Panel inferior
