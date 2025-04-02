@@ -131,7 +131,7 @@ public class BLFacadeImplementation  implements BLFacade {
 	            dbManager.addNotification(reserva.getTraveler(), message);
 
 	        }
-	        else if(estado == "Declined") {
+	        else {
 	        	String message = String.format("%s ha rechazado tu solicitud de reserva.", reserva.getRide().getDriver().getEmail());
 	            dbManager.addNotification(reserva.getTraveler(), message);
 	        }

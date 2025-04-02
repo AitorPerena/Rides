@@ -55,7 +55,7 @@ public class ViewNotificationsGUI extends JFrame {
                         unreadModel.setDataVector(getTableData(false, updatedNotifications), getColumnNames());
                         readModel.setDataVector(getTableData(true, updatedNotifications), getColumnNames());
                         JOptionPane.showMessageDialog(ViewNotificationsGUI.this, 
-                            bundle.getString("ViewNotificationsGUI.MarkSuccess"),
+                            bundle.getString("ViewNotificationsGUI.Success"),
                             bundle.getString("Success"), 
                             JOptionPane.INFORMATION_MESSAGE);
                     } else {

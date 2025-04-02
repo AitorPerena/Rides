@@ -138,10 +138,9 @@ public class DataAccess  {
 		   int year=today.get(Calendar.YEAR);
 		   if (month==12) { month=1; year+=1;}  
 	    
-		   Driver driver1 = new Driver("driver1@gmail.com", "123", "Aitor Fernandez");
-		   Driver driver2 = new Driver("driver2@gmail.com", "456", "Ane Gaztañaga");
-		   Driver driver3 = new Driver("driver3@gmail.com", "789", "Test driver");
-
+		   Driver driver1 = new Driver("driver1@gmail.com", "password123", "Aitor Fernandez");
+		   Driver driver2 = new Driver("driver2@gmail.com", "password456", "Ane Gaztañaga");
+		   Driver driver3 = new Driver("driver3@gmail.com", "password789", "Test driver");
 
 			//Create rides
 			driver1.addRide("Donostia", "Bilbo", UtilDate.newDate(year,month,15), 4, 7);
@@ -161,8 +160,6 @@ public class DataAccess  {
 			db.persist(driver1);
 			db.persist(driver2);
 			db.persist(driver3);
-
-	
 			db.getTransaction().commit();
 			System.out.println("Db initialized");
 		}

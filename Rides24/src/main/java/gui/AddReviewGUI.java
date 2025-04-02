@@ -62,14 +62,6 @@ public class AddReviewGUI extends JFrame {
         int rating = (int) ratingSpinner.getValue();
         String comment = commentArea.getText().trim();
 
-        if (comment.isEmpty()) {
-            JOptionPane.showMessageDialog(this, 
-                bundle.getString("AddReviewGUI.ErrorEmptyComment"),
-                bundle.getString("Error"), 
-                JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-
         BLFacade facade = MainGUI.getBusinessLogic();
         boolean success = facade.addReview(loggedInUser, reviewedUser, rating, comment);
 
