@@ -27,6 +27,16 @@ public class Ride implements Serializable {
     private int nPlaces;
     private Date date;
     private float price;
+    private boolean isMultiStop = false; // Nuevo: indica si es viaje compuesto
+
+    // Nuevos campos para viajes compuestos
+    @ElementCollection
+    @OrderColumn(name="stop_order")
+    private List<String> intermediateStops = new ArrayList<>(); // Paradas intermedias
+
+    @ElementCollection
+    @OrderColumn(name="distance_order")
+    private List<Double> segmentDistances = new ArrayList<>(); // Distancias entre paradas (km)
 
     @ManyToOne
     @XmlIDREF
@@ -48,6 +58,41 @@ public class Ride implements Serializable {
         this.driver = driver;
     }
 
+    // Métodos para gestión de paradas intermedias
+    public void addIntermediateStop(String location, double distanceFromPrevious) {
+        if (!isMultiStop && !intermediateStops.isEmpty()) {
+            isMultiStop = true;
+        }
+        intermediateStops.add(location);
+        segmentDistances.add(distanceFromPrevious);
+    }
+
+    public List<String> getAllStops() {
+        List<String> allStops = new ArrayList<>();
+        allStops.add(from);
+        allStops.addAll(intermediateStops);
+        allStops.add(to);
+        return allStops;
+    }
+
+    public double calculateSegmentPrice(int startStopIndex, int endStopIndex) {
+        if (!isMultiStop || startStopIndex >= endStopIndex) {
+            return price; // Viaje simple o índices inválidos
+        }
+
+        double segmentDistance = 0.0;
+        for (int i = startStopIndex; i < endStopIndex; i++) {
+            segmentDistance += segmentDistances.get(i);
+        }
+
+        double totalDistance = segmentDistances.stream()
+                .mapToDouble(Double::doubleValue)
+                .sum();
+
+        return price * (segmentDistance / totalDistance);
+    }
+
+    // Métodos existentes
     public Integer getRideNumber() {
         return rideNumber;
     }
@@ -111,15 +156,35 @@ public class Ride implements Serializable {
     public void addReservation(Reservation reservation) {
         this.reservations.add(reservation);
     }
+
     public void reducirAsientos(int asientos) {
         if (this.nPlaces >= asientos) {
             this.nPlaces -= asientos;
         } else {
             throw new IllegalArgumentException("No hay suficientes asientos disponibles.");
-        }}
+        }
+    }
+
+    // Nuevos getters y setters
+    public boolean isMultiStop() {
+        return isMultiStop;
+    }
+
+    public List<String> getIntermediateStops() {
+        return intermediateStops;
+    }
+
+    public List<Double> getSegmentDistances() {
+        return segmentDistances;
+    }
 
     @Override
     public String toString() {
-        return rideNumber + "; " + from + "; " + to + "; " + date + "; " + nPlaces + "; " + price;
+        if (!isMultiStop) {
+            return rideNumber + "; " + from + " → " + to + "; " + date + "; " + nPlaces + " asientos; " + price + "€";
+        } else {
+            return rideNumber + "; " + from + " → " + String.join(" → ", intermediateStops) + " → " + to + 
+                   "; " + date + "; " + nPlaces + " asientos; " + price + "€";
+        }
     }
 }

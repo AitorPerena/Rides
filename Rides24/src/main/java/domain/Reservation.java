@@ -3,6 +3,7 @@ package domain;
 import java.io.Serializable;
 import javax.persistence.*;
 import javax.xml.bind.annotation.XmlIDREF;
+import java.util.List;
 
 @Entity
 public class Reservation implements Serializable {
@@ -12,35 +13,81 @@ public class Reservation implements Serializable {
     @GeneratedValue
     private Integer reservationNumber;
 
-    @ManyToOne
-    @XmlIDREF
-    private Traveler traveler; 
+    // Campos para reservas de segmentos
+    private Integer startStopIndex; // Índice de parada inicial (null si es reserva completa)
+    private Integer endStopIndex;   // Índice de parada final (null si es reserva completa)
+    private Double segmentPrice;    // Precio calculado para el segmento
 
     @ManyToOne
     @XmlIDREF
-    private Ride ride; 
+    private Traveler traveler;
 
-    private int seats;  // 
-    private String status; 
+    @ManyToOne
+    @XmlIDREF
+    private Ride ride;
+
+    private int seats;
+    private String status; // "Pending", "Confirmed", "Rejected"
 
     public Reservation() {
         super();
+        this.status = "Pending"; // Valor por defecto
     }
 
     public Reservation(Traveler traveler, Ride ride, int seats, String status) {
+        this();
         this.traveler = traveler;
         this.ride = ride;
         this.seats = seats;
         this.status = status;
     }
 
-    // Getters y Setters
+    // Método para verificar si es reserva de segmento
+    public boolean isSegmentReservation() {
+        return startStopIndex != null && endStopIndex != null;
+    }
+
+    // Método para obtener descripción del segmento
+    public String getSegmentDescription() {
+        if (!isSegmentReservation()) {
+            return ride.getFrom() + " → " + ride.getTo();
+        }
+        
+        List<String> allStops = ride.getAllStops();
+        return allStops.get(startStopIndex) + " → " + allStops.get(endStopIndex);
+    }
+
+    // Getters y setters
     public Integer getReservationNumber() {
         return reservationNumber;
     }
 
     public void setReservationNumber(Integer reservationNumber) {
         this.reservationNumber = reservationNumber;
+    }
+
+    public Integer getStartStopIndex() {
+        return startStopIndex;
+    }
+
+    public void setStartStopIndex(Integer startStopIndex) {
+        this.startStopIndex = startStopIndex;
+    }
+
+    public Integer getEndStopIndex() {
+        return endStopIndex;
+    }
+
+    public void setEndStopIndex(Integer endStopIndex) {
+        this.endStopIndex = endStopIndex;
+    }
+
+    public Double getSegmentPrice() {
+        return segmentPrice;
+    }
+
+    public void setSegmentPrice(Double segmentPrice) {
+        this.segmentPrice = segmentPrice;
     }
 
     public Traveler getTraveler() {
@@ -77,6 +124,14 @@ public class Reservation implements Serializable {
 
     @Override
     public String toString() {
-        return reservationNumber + "; " + traveler.getEmail() + "; " + ride.getRideNumber() + "; " + seats + "; " + status;
+        if (isSegmentReservation()) {
+            return "Reserva #" + reservationNumber + " - Segmento: " + getSegmentDescription() + 
+                   " - " + seats + " asientos - Estado: " + status + 
+                   (segmentPrice != null ? " - Precio: " + segmentPrice + "€" : "");
+        } else {
+            return "Reserva #" + reservationNumber + " - " + ride.getFrom() + " → " + ride.getTo() + 
+                   " - " + seats + " asientos - Estado: " + status + 
+                   " - Precio: " + ride.getPrice() + "€";
+        }
     }
 }

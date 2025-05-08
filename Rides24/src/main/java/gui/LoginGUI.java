@@ -1,68 +1,56 @@
 package gui;
 
 import javax.swing.*;
+import java.util.ResourceBundle;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.ResourceBundle;
-
 import businessLogic.BLFacade;
-import domain.User;
+import domain.*;
 
-public class LoginGUI extends JFrame {
-    private static final long serialVersionUID = 1L;
-    
+public class LoginGUI extends JDialog {
     private JTextField emailField;
     private JPasswordField passwordField;
-    
+    private boolean loginSuccessful = false;
+    private User loggedInUser = null;
+
     private JLabel jLabelEmail = new JLabel(ResourceBundle.getBundle("Etiquetas").getString("LoginGUI.Email"));
     private JLabel jLabelPassword = new JLabel(ResourceBundle.getBundle("Etiquetas").getString("LoginGUI.Password"));
     private JLabel jLabelMsg = new JLabel();
     
-    private JButton jButtonLogin = new JButton(ResourceBundle.getBundle("Etiquetas").getString("LoginGUI.Submit"));
-
     public LoginGUI() {
-        this.getContentPane().setLayout(null);
-        this.setSize(new Dimension(350, 250));
-        this.setTitle(ResourceBundle.getBundle("Etiquetas").getString("LoginGUI.Title"));
-        
-        // Configurar posición de componentes
-        jLabelEmail.setBounds(new Rectangle(30, 40, 100, 20));
-        emailField = new JTextField();
-        emailField.setBounds(new Rectangle(140, 40, 150, 20));
-        
-        jLabelPassword.setBounds(new Rectangle(30, 80, 100, 20));
-        passwordField = new JPasswordField();
-        passwordField.setBounds(new Rectangle(140, 80, 150, 20));
-        
-        jButtonLogin.setBounds(new Rectangle(110, 130, 120, 30));
-        jButtonLogin.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                jButtonLogin_actionPerformed(e);
-            }
-        });
-        
-        jLabelMsg.setBounds(new Rectangle(30, 170, 300, 20));
-        jLabelMsg.setForeground(Color.red);
-
-        // Añadir componentes al panel
-        this.getContentPane().add(jLabelEmail);
-        this.getContentPane().add(emailField);
-        this.getContentPane().add(jLabelPassword);
-        this.getContentPane().add(passwordField);
-        this.getContentPane().add(jButtonLogin);
-        this.getContentPane().add(jLabelMsg);
-        
-        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        super((JFrame) null, ResourceBundle.getBundle("Etiquetas").getString("LoginGUI.Title"), true);
+        setSize(300, 200);
         setLocationRelativeTo(null);
+        setLayout(new GridLayout(3, 2, 10, 10));
+        setResizable(false);
+
+        add(jLabelEmail);
+        emailField = new JTextField();
+        add(emailField);
+
+        add(jLabelPassword);
+        passwordField = new JPasswordField();
+        add(passwordField);
+
+        JButton loginButton = new JButton(ResourceBundle.getBundle("Etiquetas").getString("LoginGUI.Submit"));
+        loginButton.addActionListener(this::performLogin);
+        add(loginButton);
+
+        JButton cancelButton = new JButton(ResourceBundle.getBundle("Etiquetas").getString("Close"));
+        cancelButton.addActionListener(e -> dispose());
+        add(cancelButton);
     }
 
-    private void jButtonLogin_actionPerformed(ActionEvent e) {
+    private void performLogin(ActionEvent e) {
         String email = emailField.getText();
         String password = new String(passwordField.getPassword());
 
         if (email.isEmpty() || password.isEmpty()) {
-            jLabelMsg.setText(ResourceBundle.getBundle("Etiquetas").getString("LoginGUI.ErrorEmpty"));
+            JOptionPane.showMessageDialog(this, 
+                ResourceBundle.getBundle("Etiquetas").getString("LoginGUI.ErrorEmpty"), 
+                ResourceBundle.getBundle("Etiquetas").getString("Error"), 
+                JOptionPane.ERROR_MESSAGE);
             return;
         }
 
@@ -70,12 +58,26 @@ public class LoginGUI extends JFrame {
         User user = facade.login(email, password);
 
         if (user != null) {
-            jLabelMsg.setText(ResourceBundle.getBundle("Etiquetas").getString("LoginGUI.Success"));
+            loginSuccessful = true;
+            loggedInUser = user;
+            JOptionPane.showMessageDialog(this, 
+                ResourceBundle.getBundle("Etiquetas").getString("LoginGUI.Success"), 
+                ResourceBundle.getBundle("Etiquetas").getString("Success"), 
+                JOptionPane.INFORMATION_MESSAGE);
             dispose();
-            MainGUI mainGUI = new MainGUI(user);
-            mainGUI.setVisible(true);
         } else {
-            jLabelMsg.setText(ResourceBundle.getBundle("Etiquetas").getString("LoginGUI.ErrorInvalid"));
+            JOptionPane.showMessageDialog(this, 
+                ResourceBundle.getBundle("Etiquetas").getString("LoginGUI.ErrorInvalid"), 
+                ResourceBundle.getBundle("Etiquetas").getString("Error"), 
+                JOptionPane.ERROR_MESSAGE);
         }
+    }
+
+    public boolean isLoginSuccessful() {
+        return loginSuccessful;
+    }
+
+    public User getLoggedInUser() {
+        return loggedInUser;
     }
 }

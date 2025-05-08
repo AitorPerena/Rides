@@ -23,10 +23,9 @@ public class Driver extends User implements Serializable {
         super();
     }
 
-    public Driver(String email, String password, String name) {
-        super(email, password,name);
+    public Driver(String email, String name) {
+        super(email, name);
     }
-
 
     public List<Ride> getRides() {
         return rides;

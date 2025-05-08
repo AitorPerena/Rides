@@ -18,8 +18,8 @@ public class Traveler extends User implements Serializable {
         super();
     }
 
-    public Traveler(String email, String password, String name) {
-        super(email, password, name);
+    public Traveler(String email, String password) {
+        super(email, password);
     }
 
     public List<Reservation> getReservations() {

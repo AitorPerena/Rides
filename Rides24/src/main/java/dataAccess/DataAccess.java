@@ -2,8 +2,10 @@ package dataAccess;
 
 import java.io.File;
 
-import java.net.NoRouteToHostException;
+
+
 import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -11,6 +13,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
+import java.util.*;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
@@ -27,6 +30,7 @@ import exceptions.RideAlreadyExistException;
 import exceptions.RideMustBeLaterThanTodayException;
 
 
+
 public class DataAccess  {
 	private  EntityManager  db;
 	private  EntityManagerFactory emf;
@@ -39,30 +43,170 @@ public class DataAccess  {
 	    return user;
 	}
 
-	public boolean addUser(String email, String password, String name, String role) {
+	public boolean addUser(String email, String password, String role) {
 	    db.getTransaction().begin();
 	    try {
 	        User user;
-	        if (role.equalsIgnoreCase("Driver")) {
-	            user = new Driver(email, password, name);
-	        } else if (role.equalsIgnoreCase("Traveler")) {
-	            user = new Traveler(email, password, name);
+	        if (role.equals("Driver")) {
+	            user = new Driver(email, password);
+	        } else if (role.equals("Traveler")) {
+	            user = new Traveler(email, password);
 	        } else {
 	            throw new IllegalArgumentException("Rol no válido");
 	        }
-
+	        
+	        Wallet wallet = new Wallet(user);
+	        user.setWallet(wallet);
+	        
 	        db.persist(user);
+	        db.persist(wallet);
 	        db.getTransaction().commit();
+
 	        return true;
 	    } catch (Exception e) {
 	        if (db.getTransaction().isActive()) {
-	            db.getTransaction().rollback();
+	            db.getTransaction().rollback(); 
 	        }
 	        e.printStackTrace();
 	        return false;
 	    }
 	}
-
+	
+	public Ride createMultiStopRide(String driverEmail, List<String> stops, List<Double> distances, 
+	                                  Date date, int nPlaces, float totalPrice) 
+	           {
+	        
+	        
+	        db.getTransaction().begin();
+	        try {
+	            Driver driver = db.find(Driver.class, driverEmail);
+	            if(driver == null) {
+	                throw new IllegalArgumentException("Conductor no encontrado");
+	            }
+	            
+	            // Verificar si ya existe un viaje con las mismas paradas en la misma fecha
+	            if(doesMultiStopRideExist(driver, stops.get(0), stops.get(stops.size()-1), date)) {
+	                throw new RideAlreadyExistException("Ya existe un viaje con estas paradas en esta fecha");
+	            }
+	            
+	            Ride ride = new Ride(stops.get(0), stops.get(stops.size()-1), date, nPlaces, totalPrice, driver);
+	            
+	            // Añadir paradas intermedias
+	            for(int i = 1; i < stops.size() - 1; i++) {
+	                ride.addIntermediateStop(stops.get(i), distances.get(i-1));
+	            }
+	            
+	            db.persist(ride);
+	            db.getTransaction().commit();
+	            return ride;
+	        } catch (Exception e) {
+	            if (db.getTransaction().isActive()) {
+	                db.getTransaction().rollback();
+	            }
+	            throw new RuntimeException("Error al crear el viaje con múltiples paradas", e);
+	        }
+	    }
+	    
+	    private boolean doesMultiStopRideExist(Driver driver, String origin, String destination, Date date) {
+	        TypedQuery<Long> query = db.createQuery(
+	            "SELECT COUNT(r) FROM Ride r WHERE r.driver = :driver AND r.from = :origin " +
+	            "AND r.to = :destination AND r.date = :date", Long.class);
+	        query.setParameter("driver", driver);
+	        query.setParameter("origin", origin);
+	        query.setParameter("destination", destination);
+	        query.setParameter("date", date);
+	        return query.getSingleResult() > 0;
+	    }
+	    
+	    /**
+	     * Reserva un segmento de un viaje
+	     */
+	    public Reservation reserveSegment(Integer rideId, String travelerEmail, 
+	                                    int startIdx, int endIdx, int seats) {
+	        db.getTransaction().begin();
+	        try {
+	            Ride ride = db.find(Ride.class, rideId);
+	            Traveler traveler = db.find(Traveler.class, travelerEmail);
+	            
+	            if(ride == null || traveler == null) {
+	                throw new IllegalArgumentException("Viaje o viajero no encontrado");
+	            }
+	            
+	            List<String> stops = ride.getAllStops();
+	            if(startIdx < 0 || endIdx >= stops.size() || startIdx >= endIdx) {
+	                throw new IllegalArgumentException("Índices de parada inválidos");
+	            }
+	            
+	            if(ride.getnPlaces() < seats) {
+	                throw new IllegalArgumentException("No hay suficientes asientos disponibles");
+	            }
+	            
+	            Reservation reservation = new Reservation();
+	            reservation.setRide(ride);
+	            reservation.setTraveler(traveler);
+	            reservation.setSeats(seats);
+	            reservation.setStartStopIndex(startIdx);
+	            reservation.setEndStopIndex(endIdx);
+	            reservation.setSegmentPrice(ride.calculateSegmentPrice(startIdx, endIdx));
+	            reservation.setStatus("Pending");
+	            
+	            db.persist(reservation);
+	            ride.reducirAsientos(seats);
+	            
+	            // Notificar al conductor
+	            Notification notification = new Notification(
+	                ride.getDriver(), 
+	                "Nueva reserva de segmento: " + stops.get(startIdx) + " → " + stops.get(endIdx)
+	            );
+	            db.persist(notification);
+	            
+	            db.getTransaction().commit();
+	            return reservation;
+	        } catch(Exception e) {
+	            if(db.getTransaction().isActive()) {
+	                db.getTransaction().rollback();
+	            }
+	            throw e;
+	        }
+	    }
+	    
+	    /**
+	     * Busca viajes que contengan un segmento específico
+	     */
+	    public List<Ride> findRidesWithSegment(String from, String to, Date date) {
+	        // Primero obtenemos todos los viajes en la fecha especificada
+	        List<Ride> rides = getRidesByDate(date);
+	        
+	        // Filtramos los que contengan el segmento from→to
+	        List<Ride> result = new ArrayList<>();
+	        for(Ride ride : rides) {
+	            List<String> stops = ride.getAllStops();
+	            int fromIndex = stops.indexOf(from);
+	            int toIndex = stops.indexOf(to);
+	            
+	            if(fromIndex != -1 && toIndex != -1 && fromIndex < toIndex) {
+	                result.add(ride);
+	            }
+	        }
+	        
+	        return result;
+	    }
+	    
+	    private List<Ride> getRidesByDate(Date date) {
+	        TypedQuery<Ride> query = db.createQuery(
+	            "SELECT r FROM Ride r WHERE r.date = :date", Ride.class);
+	        query.setParameter("date", date);
+	        return query.getResultList();
+	    }
+	    
+	    /**
+	     * Obtiene todas las paradas de un viaje
+	     */
+	    public List<String> getRideStops(Integer rideId) {
+	        Ride ride = db.find(Ride.class, rideId);
+	        return ride != null ? ride.getAllStops() : Collections.emptyList();
+	    }
+	    
 
 	public boolean addReservation(Traveler traveler, Ride ride, int seats, String status) {
 	    db.getTransaction().begin();
@@ -79,6 +223,7 @@ public class DataAccess  {
 	        return false;
 	    }
 	}
+	
 
 	public List<Reservation> getReservationsByDriver(Driver driver) {
 	    TypedQuery<Reservation> query = db.createQuery(
@@ -138,9 +283,9 @@ public class DataAccess  {
 		   int year=today.get(Calendar.YEAR);
 		   if (month==12) { month=1; year+=1;}  
 	    
-		   Driver driver1 = new Driver("driver1@gmail.com", "password123", "Aitor Fernandez");
-		   Driver driver2 = new Driver("driver2@gmail.com", "password456", "Ane Gaztañaga");
-		   Driver driver3 = new Driver("driver3@gmail.com", "password789", "Test driver");
+		   Driver driver1 = new Driver("driver1@gmail.com", "Aitor Fernandez");
+		   Driver driver2 = new Driver("driver2@gmail.com", "Ane Gaztañaga");
+		   Driver driver3 = new Driver("driver3@gmail.com", "Test driver");
 
 			//Create rides
 			driver1.addRide("Donostia", "Bilbo", UtilDate.newDate(year,month,15), 4, 7);
@@ -396,6 +541,103 @@ public List<Notification> getNotificationsForUser(User user) {
         return new ArrayList<>();
     }
 }
+
+public boolean addFunds(String userEmail, float amount) {
+    db.getTransaction().begin();
+    try {
+        User user = db.find(User.class, userEmail);
+        if (user != null && user.getWallet() != null) {
+            user.getWallet().addFunds(amount);
+            db.getTransaction().commit();
+            return true;
+        }
+        return false;
+    } catch (Exception e) {
+        if (db.getTransaction().isActive()) {
+            db.getTransaction().rollback();
+        }
+        e.printStackTrace();
+        return false;
+    }
+}
+
+public boolean withdrawFunds(String userEmail, float amount) {
+	db.getTransaction().begin();
+	try {
+		User user = db.find(User.class,  userEmail);
+		if(user != null && user.getWallet() != null) {
+			user.getWallet().deductFunds(amount);
+			db.getTransaction().commit();
+			return true;
+		}
+		return false;
+	} catch (Exception e) {
+		if (db.getTransaction().isActive()) {
+			db.getTransaction().rollback();
+		}
+		e.printStackTrace();
+		return false;
+	}
+}
+
+public boolean makePayment(String travelerEmail, String driverEmail, float amount) {
+	db.getTransaction().begin();
+	try {
+		User traveler = db.find(User.class,  travelerEmail);
+		User driver = db.find(User.class,  driverEmail);
+		if(traveler != null && traveler.getWallet() != null && driver != null && driver.getWallet() != null) {
+			//Verificar que el traveler tiene suficiente dinero
+			if(traveler.getWallet().getBalance() >= amount) {
+				//Completar la acción
+				traveler.getWallet().deductFunds(amount);
+				driver.getWallet().addFunds(amount);
+				db.getTransaction().commit();
+				return true;
+			}
+		}
+		return false;
+	} catch (Exception e) {
+		if (db.getTransaction().isActive()) {
+			db.getTransaction().rollback();
+		}
+		e.printStackTrace();
+		return false;
+	}
+}
+
+public Date parseAndValidateExpirationDate(String expiration) throws ParseException {
+	 SimpleDateFormat sdf = new SimpleDateFormat("MM/YY");
+	 sdf.setLenient(false);
+	 Date date = sdf.parse(expiration);
+	 
+	 // Asegurar que es fecha futura
+	 Date today = new Date();
+	 if (date.before(today)) {
+	     throw new IllegalArgumentException("La fecha de expiración debe ser futura");
+	 }
+	 return date;
+	}
+
+	public boolean validateCardData(String cardNumber, String expiration, String cvv) {
+	 try {
+	     // Validar formato del número de tarjeta
+	     if (!cardNumber.matches("^\\d{4}-\\d{4}-\\d{4}-\\d{4}$")) {
+	         return false;
+	     }
+	     
+	     // Validar CVV
+	     if (!cvv.matches("^\\d{3,4}$")) {
+	         return false;
+	     }
+	     
+	     // Validar fecha de expiración
+	     parseAndValidateExpirationDate(expiration);
+	     
+	     return true;
+	 } catch (ParseException e) {
+	     return false;
+	 }
+	}
 
 public List<User> getAllUsers() {
         TypedQuery<User> query = db.createQuery(

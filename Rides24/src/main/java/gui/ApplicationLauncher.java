@@ -4,29 +4,20 @@ import java.awt.Color;
 import java.net.URL;
 import java.util.Locale;
 
+import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.xml.namespace.QName;
 import javax.xml.ws.Service;
-
 import configuration.ConfigXML;
 import dataAccess.DataAccess;
-import domain.Driver;
 import businessLogic.BLFacade;
 import businessLogic.BLFacadeImplementation;
 
-public class ApplicationLauncher { 
+public class ApplicationLauncher {
     public static void main(String[] args) {
         ConfigXML c = ConfigXML.getInstance();
-
-        System.out.println(c.getLocale());
-
         Locale.setDefault(new Locale(c.getLocale()));
-
-        System.out.println("Locale: " + Locale.getDefault());
-
-
-        MainGUI a = new MainGUI(null);
-        a.setVisible(true);
 
         try {
             BLFacade appFacadeInterface;
@@ -34,8 +25,11 @@ public class ApplicationLauncher {
 
             if (c.isBusinessLogicLocal()) {
                 DataAccess da = new DataAccess();
+                if (c.isDatabaseInitialized()) {
+                    da.initializeDB();
+                }
                 appFacadeInterface = new BLFacadeImplementation(da);
-            } else { // If remote
+            } else {
                 String serviceName = "http://" + c.getBusinessLogicNode() + ":" + c.getBusinessLogicPort() + "/ws/" + c.getBusinessLogicName() + "?wsdl";
                 URL url = new URL(serviceName);
                 QName qname = new QName("http://businessLogic/", "BLFacadeImplementationService");
@@ -43,13 +37,21 @@ public class ApplicationLauncher {
                 appFacadeInterface = service.getPort(BLFacade.class);
             }
 
+            // Configurar la lógica de negocio ANTES de crear la GUI
             MainGUI.setBussinessLogic(appFacadeInterface);
+            
+            // Iniciar la interfaz gráfica
+            SwingUtilities.invokeLater(() -> {
+                MainGUI mainGUI = new MainGUI();
+                mainGUI.setVisible(true);
+            });
 
         } catch (Exception e) {
-            a.jLabelSelectOption.setText("Error: " + e.toString());
-            a.jLabelSelectOption.setForeground(Color.RED);
-
-            System.out.println("Error in ApplicationLauncher: " + e.toString());
+            System.err.println("Error in ApplicationLauncher: " + e.getMessage());
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(null, 
+                "Error al iniciar la aplicación: " + e.getMessage(), 
+                "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 }

@@ -12,16 +12,19 @@ public abstract class User implements Serializable {
     private String email;  // El correo electrónico será la clave primaria
     public String name;  // Nombre del usuario
     private String password;  // Contraseña del usuario
-
+    
+    @OneToOne(cascade = CascadeType.ALL)
+    private Wallet wallet;
+    
+   
     public User() {
         super();
     }
 
     // Constructor con parámetros
-    public User(String email, String password, String name) {
+    public User(String email, String password) {
         this.email = email;
         this.password = password;
-        this.name = name;
     }
 
     // Getters y Setters
@@ -47,6 +50,14 @@ public abstract class User implements Serializable {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+    
+    public Wallet getWallet() {
+    	return wallet;	
+    }
+    
+    public void setWallet(Wallet wallet) {
+    	this.wallet = wallet;
     }
 
     @Override

@@ -1,10 +1,12 @@
 package gui;
 
 import javax.swing.*;
+
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ResourceBundle;
+import java.util.Date;
 
 import businessLogic.BLFacade;
 
@@ -15,12 +17,19 @@ public class RegisterGUI extends JFrame {
     private JTextField emailField;
     private JPasswordField passwordField;
     private JComboBox<String> roleComboBox;
+    private JTextField cardNumberField;
+    private JTextField expirationField;
+    private JPasswordField cvvField;
     private JButton registerButton;
+    private JButton cancelButton;
     
     private JLabel jLabelName = new JLabel();
     private JLabel jLabelEmail = new JLabel();
     private JLabel jLabelPassword = new JLabel();
     private JLabel jLabelRole = new JLabel();
+    private JLabel jLabelcardNumber = new JLabel();
+    private JLabel jLabelexpiration = new JLabel();
+    private JLabel jLabelcvv = new JLabel();
     
     private ResourceBundle bundle;
 
@@ -31,11 +40,10 @@ public class RegisterGUI extends JFrame {
 
     private void initializeUI() {
         setTitle(bundle.getString("RegisterGUI.Title"));
-        setSize(300, 250);
-        setLayout(new GridLayout(5, 2));
+        setSize(400, 400);
+        setLayout(new GridLayout(9, 2, 5, 5)); 
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setLocationRelativeTo(null);
-
 
         jLabelName.setText(bundle.getString("RegisterGUI.Name"));
         nameField = new JTextField();
@@ -46,6 +54,15 @@ public class RegisterGUI extends JFrame {
         jLabelPassword.setText(bundle.getString("RegisterGUI.Password"));
         passwordField = new JPasswordField();
         
+        jLabelcardNumber.setText(bundle.getString("RegisterGUI.CardNumber")); 
+        cardNumberField = new JTextField();
+        
+        jLabelexpiration.setText(bundle.getString("RegisterGUI.Expiration")); 
+        expirationField = new JTextField();
+        
+        jLabelcvv.setText(bundle.getString("RegisterGUI.CVV")); 
+        cvvField = new JPasswordField();
+       
         jLabelRole.setText(bundle.getString("RegisterGUI.Role"));
         roleComboBox = new JComboBox<>(new String[]{"Traveler", "Driver"});
         
@@ -55,8 +72,15 @@ public class RegisterGUI extends JFrame {
                 registerAction();
             }
         });
+        
+        cancelButton = new JButton(bundle.getString("RegisterGUI.Cancel"));
+        cancelButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                cancelAction();
+            }
+        });
 
- 
+
         add(jLabelName);
         add(nameField);
         add(jLabelEmail);
@@ -65,17 +89,27 @@ public class RegisterGUI extends JFrame {
         add(passwordField);
         add(jLabelRole);
         add(roleComboBox);
-        add(new JLabel());
+        add(jLabelcardNumber);
+        add(cardNumberField);
+        add(jLabelexpiration);
+        add(expirationField);
+        add(jLabelcvv);
+        add(cvvField);
         add(registerButton);
+        add(cancelButton);
     }
 
     private void registerAction() {
         String name = nameField.getText();
         String email = emailField.getText();
         String password = new String(passwordField.getPassword());
+        String cardNumber = cardNumberField.getText().trim();
+        String expiration = expirationField.getText().trim();
+        String cvv = new String(cvvField.getPassword()).trim();
         String role = (String) roleComboBox.getSelectedItem();
 
-        if (email.isEmpty() || password.isEmpty()) {
+        if (name.isEmpty() || email.isEmpty() || password.isEmpty() || 
+            cardNumber.isEmpty() || expiration.isEmpty() || cvv.isEmpty()) {
             JOptionPane.showMessageDialog(RegisterGUI.this, 
                 bundle.getString("RegisterGUI.ErrorEmpty"),
                 bundle.getString("Error"), 
@@ -84,6 +118,44 @@ public class RegisterGUI extends JFrame {
         }
 
         BLFacade facade = MainGUI.getBusinessLogic();
+
+        // Verificar si el usuario ya existe
+        if (facade.userExists(email)) {
+            JOptionPane.showMessageDialog(RegisterGUI.this,
+                bundle.getString("RegisterGUI.UserExists"),
+                bundle.getString("Error"), 
+                JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        // Validar tarjeta de crédito
+        if (!facade.validateCreditCard(cardNumber, expiration, cvv)) {
+            JOptionPane.showMessageDialog(RegisterGUI.this,
+                bundle.getString("RegisterGUI.InvalidCard"),
+                bundle.getString("Error"), 
+                JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        try {
+            // Validar fecha de expiración
+            Date expirationDate = facade.parseExpirationDate(expiration);
+            if (expirationDate.before(new Date())) {
+                JOptionPane.showMessageDialog(RegisterGUI.this,
+                    bundle.getString("RegisterGUI.ExpiredCard"),
+                    bundle.getString("Error"), 
+                    JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(RegisterGUI.this,
+                bundle.getString("RegisterGUI.InvalidDate"),
+                bundle.getString("Error"), 
+                JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        // Registrar usuario
         boolean success = facade.register(email, password, name, role);
 
         if (success) {
@@ -98,5 +170,9 @@ public class RegisterGUI extends JFrame {
                 bundle.getString("Error"), 
                 JOptionPane.ERROR_MESSAGE);
         }
+    }
+    
+    private void cancelAction() {
+        dispose(); 
     }
 }

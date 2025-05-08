@@ -1,40 +1,39 @@
 package gui;
 
 import javax.swing.*;
+
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-import java.util.Locale;
-import java.util.ResourceBundle;
-
 import domain.*;
 import businessLogic.BLFacade;
+import java.util.ResourceBundle;
+import java.util.Locale;
 
 public class MainGUI extends JFrame {
-    private User loggedInUser; 
     private static final long serialVersionUID = 1L;
 
-    private JPanel jContentPane = null;
-    private JButton jButtonCreateRide = null;
-    private JButton jButtonQueryRides = null;
-    private JButton jButtonRequestRide = null;  
-    private JButton jButtonViewReservations = null;  
-    private JButton jButtonLogin = null; 
-    private JButton jButtonRegister = null; 
-    private JButton jButtonAddReview;  
-    private JButton jButtonViewNotifications; 
+    private User loggedInUser = null;
 
-    protected JLabel jLabelSelectOption;
+    private JPanel mainPanel;
+    private CardLayout cardLayout;
+    private JPanel cardsPanel;
+
+    // Paneles
+    private JPanel guestPanel;
+    private JPanel travelerPanel;
+    private JPanel driverPanel;
+    private JPanel adminPanel;
+    private JPanel languagePanel;
+
     private JRadioButton rdbtnEnglish;
     private JRadioButton rdbtnEuskara;
     private JRadioButton rdbtnCastellano;
-    private JPanel panel;
     private final ButtonGroup buttonGroup = new ButtonGroup();
+    
+    private ResourceBundle resourceBundle = ResourceBundle.getBundle("Etiquetas");
 
     private static BLFacade appFacadeInterface;
-
     public static BLFacade getBusinessLogic() {
         return appFacadeInterface;
     }
@@ -43,85 +42,180 @@ public class MainGUI extends JFrame {
         appFacadeInterface = afi;
     }
 
-    public MainGUI(User user) {
-        super();
-        this.loggedInUser = user; 
+    public MainGUI() {
+        super("Ride Sharing App");
+        initializeUI();
+    }
 
-        jContentPane = new JPanel();
-        jContentPane.setLayout(new GridLayout(10, 1, 0, 0)); 
+    private void initializeUI() {
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setSize(600, 400);
+        setLocationRelativeTo(null);
 
-
+        // Configurar CardLayout para cambiar entre paneles
+        cardLayout = new CardLayout();
+        cardsPanel = new JPanel(cardLayout);
         
-        jLabelSelectOption = new JLabel("Seleccionar opción");
-        jLabelSelectOption.setFont(new Font("Tahoma", Font.BOLD, 13));
-        jLabelSelectOption.setForeground(Color.BLACK);
-        jLabelSelectOption.setHorizontalAlignment(SwingConstants.CENTER);
+        // Crear los diferentes paneles
+        createGuestPanel();
+        createTravelerPanel();
+        createDriverPanel();
+        createAdminPanel();
+        createLanguagePanel();
 
-        jButtonLogin = new JButton("Iniciar Sesión");
-        jButtonLogin.addActionListener(e -> {
-            JFrame loginGUI = new LoginGUI();
-            loginGUI.setVisible(true);
-        });
+        // Añadir todos los paneles al CardLayout
+        cardsPanel.add(guestPanel, "GUEST");
+        cardsPanel.add(travelerPanel, "TRAVELER");
+        cardsPanel.add(driverPanel, "DRIVER");
+        cardsPanel.add(adminPanel, "ADMIN");
 
-        jButtonRegister = new JButton("Registrarse");
-        jButtonRegister.addActionListener(e -> {
-            JFrame registerGUI = new RegisterGUI();
-            registerGUI.setVisible(true);
-        });
+        // Mostrar el panel de invitado por defecto
+        cardLayout.show(cardsPanel, "GUEST");
 
-        jButtonCreateRide = new JButton("Crear Viaje");
-        jButtonCreateRide.addActionListener(e -> {
-            if (loggedInUser instanceof Driver) {
-                JFrame createRideGUI = new CreateRideGUI((Driver) loggedInUser);
-                createRideGUI.setVisible(true);
-            }
-        });
+        // Configurar el panel principal
+        mainPanel = new JPanel(new BorderLayout());
+        mainPanel.add(cardsPanel, BorderLayout.CENTER);
+        mainPanel.add(languagePanel, BorderLayout.SOUTH);
+        add(mainPanel);
+        updateUITexts();
+    }
 
-        jButtonQueryRides = new JButton("Consultar Viajes");
-        jButtonQueryRides.addActionListener(e -> {
-            JFrame findRidesGUI = new FindRidesGUI();
-            findRidesGUI.setVisible(true);
-        });
+    private JButton createResourceButton(String resourceKey) {
+        JButton button = new JButton(resourceBundle.getString(resourceKey));
+        button.putClientProperty("resourceKey", resourceKey);
+        return button;
+    }
 
-        jButtonRequestRide = new JButton("Solicitar Reserva");
-        jButtonRequestRide.addActionListener(e -> {
-            if (loggedInUser instanceof Traveler) {
-                JFrame requestRideGUI = new RequestRideGUI((Traveler) loggedInUser);
-                requestRideGUI.setVisible(true);
-            }
-        });
+    private void createGuestPanel() {
+        guestPanel = new JPanel(new GridLayout(4, 1, 10, 10));
+        guestPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
-        jButtonViewReservations = new JButton("Ver Solicitudes");
-        jButtonViewReservations.addActionListener(e -> {
-            if (loggedInUser instanceof Driver) {
-                JFrame viewReservationsGUI = new ViewReservationsGUI((Driver) loggedInUser);
-                viewReservationsGUI.setVisible(true);
-            }
-        });
+        JLabel welcomeLabel = new JLabel(resourceBundle.getString("MainGUI.Welcome"), JLabel.CENTER);
+        welcomeLabel.setFont(new Font("Arial", Font.BOLD, 18));
+        welcomeLabel.putClientProperty("resourceKey", "MainGUI.Welcome");
+        
+        JButton loginButton = createResourceButton("MainGUI.Login");
+        loginButton.addActionListener(e -> openLoginDialog());
 
-        jButtonAddReview = new JButton("Añadir Reseña");
-        jButtonAddReview.addActionListener(e -> {
-            if (loggedInUser != null) {
-                JFrame addReviewGUI = new AddReviewGUI(loggedInUser);
-                addReviewGUI.setVisible(true);
-            }
-        });
+        JButton registerButton = createResourceButton("MainGUI.Register");
+        registerButton.addActionListener(e -> openRegisterDialog());
 
-        jButtonViewNotifications = new JButton("Ver Notificaciones");
-        jButtonViewNotifications.addActionListener(e -> {
-            if (loggedInUser != null) {
-                JFrame viewNotificationsGUI = new ViewNotificationsGUI(loggedInUser);
-                viewNotificationsGUI.setVisible(true);
-            }
-        });
+        JButton queryRidesButton = createResourceButton("MainGUI.QueryRides");
+        queryRidesButton.addActionListener(e -> new FindRidesGUI().setVisible(true));
 
-        panel = new JPanel();
+        guestPanel.add(welcomeLabel);
+        guestPanel.add(loginButton);
+        guestPanel.add(registerButton);
+        guestPanel.add(queryRidesButton);
+    }
+
+    private void createTravelerPanel() {
+        travelerPanel = new JPanel(new GridLayout(5, 1, 10, 10));
+        travelerPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+
+        JLabel welcomeLabel = new JLabel(resourceBundle.getString("MainGUI.Welcome") + " " + 
+                                       resourceBundle.getString("Traveler"), JLabel.CENTER);
+        welcomeLabel.setFont(new Font("Arial", Font.BOLD, 18));
+        welcomeLabel.putClientProperty("resourceKey", "MainGUI.WelcomeTraveler");
+        
+        JButton requestRideButton = createResourceButton("MainGUI.RequestRide");
+        requestRideButton.addActionListener(e -> new RequestRideGUI((Traveler) loggedInUser).setVisible(true));
+
+        JButton queryRidesButton = createResourceButton("MainGUI.QueryRides");
+        queryRidesButton.addActionListener(e -> new FindRidesGUI().setVisible(true));
+        
+        JPanel bottomPanel = new JPanel(new BorderLayout());
+        
+        // Botón de notificaciones
+        JButton notificationsButton = createResourceButton("MainGUI.ViewNotifications");
+        notificationsButton.setHorizontalTextPosition(SwingConstants.RIGHT);
+        notificationsButton.addActionListener(e -> new ViewNotificationsGUI(loggedInUser).setVisible(true));
+        bottomPanel.add(notificationsButton, BorderLayout.WEST);
+        
+        // Botón de reseñas
+        JButton reviewsButton = createResourceButton("MainGUI.AddReview");
+        reviewsButton.setHorizontalTextPosition(SwingConstants.LEFT);
+        reviewsButton.addActionListener(e -> new AddReviewGUI(loggedInUser).setVisible(true));
+        bottomPanel.add(reviewsButton, BorderLayout.EAST);
+
+        travelerPanel.add(bottomPanel, BorderLayout.SOUTH);
+
+        JButton walletButton = createResourceButton("MainGUI.Wallet");
+        walletButton.addActionListener(e -> new WalletGUI(loggedInUser).setVisible(true));
+
+        JButton logoutButton = createResourceButton("MainGUI.CloseSession");
+        logoutButton.addActionListener(e -> logout());
+
+        travelerPanel.add(welcomeLabel);
+        travelerPanel.add(requestRideButton);
+        travelerPanel.add(queryRidesButton);
+        travelerPanel.add(walletButton);
+        travelerPanel.add(logoutButton);
+    }
+
+    private void createDriverPanel() {
+        driverPanel = new JPanel(new GridLayout(6, 1, 10, 10));
+        driverPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+
+        JLabel welcomeLabel = new JLabel(resourceBundle.getString("MainGUI.Welcome") + " " + 
+                                       resourceBundle.getString("Driver"), JLabel.CENTER);
+        welcomeLabel.setFont(new Font("Arial", Font.BOLD, 18));
+        welcomeLabel.putClientProperty("resourceKey", "MainGUI.WelcomeDriver");
+        
+        JButton createRideButton = createResourceButton("MainGUI.CreateRide");
+        createRideButton.addActionListener(e -> new CreateRideGUI((Driver) loggedInUser).setVisible(true));
+
+        JButton viewReservationsButton = createResourceButton("MainGUI.ViewReservations");
+        viewReservationsButton.addActionListener(e -> new ViewReservationsGUI((Driver) loggedInUser).setVisible(true));
+
+        JButton queryRidesButton = createResourceButton("MainGUI.QueryRides");
+        queryRidesButton.addActionListener(e -> new FindRidesGUI().setVisible(true));
+
+        JButton walletButton = createResourceButton("MainGUI.Wallet");
+        walletButton.addActionListener(e -> new WalletGUI(loggedInUser).setVisible(true));
+
+        JButton logoutButton = createResourceButton("MainGUI.CloseSession");
+        logoutButton.addActionListener(e -> logout());
+
+        driverPanel.add(welcomeLabel);
+        driverPanel.add(createRideButton);
+        driverPanel.add(viewReservationsButton);
+        driverPanel.add(queryRidesButton);
+        driverPanel.add(walletButton);
+        driverPanel.add(logoutButton);
+    }
+
+    private void createAdminPanel() {
+        adminPanel = new JPanel(new GridLayout(4, 1, 10, 10));
+        adminPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+
+        JLabel welcomeLabel = new JLabel(resourceBundle.getString("MainGUI.Welcome") + " " + 
+                                       resourceBundle.getString("MainGUI.UserRoleAdmin"), JLabel.CENTER);
+        welcomeLabel.setFont(new Font("Arial", Font.BOLD, 18));
+        welcomeLabel.putClientProperty("resourceKey", "MainGUI.WelcomeAdmin");
+        
+        JButton manageUsersButton = createResourceButton("MainGUI.ManageUsers");
+        //manageUsersButton.addActionListener(e -> new ManageUsersGUI().setVisible(true));
+
+        JButton queryRidesButton = createResourceButton("MainGUI.QueryRides");
+        queryRidesButton.addActionListener(e -> new FindRidesGUI().setVisible(true));
+
+        JButton logoutButton = createResourceButton("MainGUI.CloseSession");
+        logoutButton.addActionListener(e -> logout());
+
+        adminPanel.add(welcomeLabel);
+        adminPanel.add(manageUsersButton);
+        adminPanel.add(queryRidesButton);
+        adminPanel.add(logoutButton);
+    }
+    
+    private void createLanguagePanel() {
+        languagePanel = new JPanel();
         rdbtnEnglish = new JRadioButton("English");
         rdbtnEuskara = new JRadioButton("Euskara");
         rdbtnCastellano = new JRadioButton("Castellano");
-        Locale.setDefault(new Locale("es"));
+        
         Locale currentLocale = Locale.getDefault();
-        ResourceBundle bundle = ResourceBundle.getBundle("Etiquetas", currentLocale);
         if (currentLocale.getLanguage().equals("eus")) {
             rdbtnEuskara.setSelected(true);
         } else if (currentLocale.getLanguage().equals("es")) {
@@ -134,85 +228,102 @@ public class MainGUI extends JFrame {
         buttonGroup.add(rdbtnEuskara);
         buttonGroup.add(rdbtnCastellano);
 
-        rdbtnEnglish.addActionListener(e -> {
-            Locale.setDefault(new Locale("en"));
-            paintAgain();
-        });
+        rdbtnEnglish.addActionListener(e -> changeLanguage(new Locale("en")));
+        rdbtnEuskara.addActionListener(e -> changeLanguage(new Locale("eus")));
+        rdbtnCastellano.addActionListener(e -> changeLanguage(new Locale("es")));
 
-        rdbtnEuskara.addActionListener(e -> {
-            Locale.setDefault(new Locale("eus"));
-            paintAgain();
-        });
-
-        rdbtnCastellano.addActionListener(e -> {
-            Locale.setDefault(new Locale("es"));
-            paintAgain();
-        });
-
-        panel.add(rdbtnEuskara);
-        panel.add(rdbtnCastellano);
-        panel.add(rdbtnEnglish);
-
-        jContentPane.add(jLabelSelectOption);
-        jContentPane.add(jButtonLogin);
-        jContentPane.add(jButtonRegister);
-        jContentPane.add(jButtonCreateRide);
-        jContentPane.add(jButtonQueryRides);
-        jContentPane.add(jButtonRequestRide);
-        jContentPane.add(jButtonViewReservations);
-        jContentPane.add(jButtonAddReview);
-        jContentPane.add(jButtonViewNotifications);
-        jContentPane.add(panel);
- 
-        setContentPane(jContentPane);
-        setTitle(ResourceBundle.getBundle("Etiquetas").getString("MainGUI.MainTitle") + 
-               " - Usuario: " + (loggedInUser != null ? loggedInUser.getEmail() : "No autenticado"));
-        addWindowListener(new WindowAdapter() {
-            @Override
-            public void windowClosing(WindowEvent e) {
-                System.exit(1);
-            }
-        });
-
-        this.setSize(495, 400);
-        this.setVisible(true);
-
-        adjustUIForUserRole();
+        languagePanel.add(rdbtnEuskara);
+        languagePanel.add(rdbtnCastellano);
+        languagePanel.add(rdbtnEnglish);
     }
-
-    private void adjustUIForUserRole() {
-        boolean isLoggedIn = (loggedInUser != null);
-        
-
-        jButtonLogin.setEnabled(!isLoggedIn);
-        jButtonRegister.setEnabled(!isLoggedIn);
-        
     
-        jButtonCreateRide.setEnabled(isLoggedIn && loggedInUser instanceof Driver);
-        jButtonRequestRide.setEnabled(isLoggedIn && loggedInUser instanceof Traveler);
-        jButtonViewReservations.setEnabled(isLoggedIn && loggedInUser instanceof Driver);
-        
- 
-        jButtonAddReview.setEnabled(isLoggedIn);
-        jButtonViewNotifications.setEnabled(isLoggedIn);
+    private void changeLanguage(Locale locale) {
+        Locale.setDefault(locale);
+        resourceBundle = ResourceBundle.getBundle("Etiquetas", locale);
+        updateUITexts();
     }
 
-     private void paintAgain() {
-        ResourceBundle bundle = ResourceBundle.getBundle("Etiquetas");
+    private void openLoginDialog() {
+        LoginGUI loginDialog = new LoginGUI();
+        loginDialog.setVisible(true);
         
-        jLabelSelectOption.setText(bundle.getString("MainGUI.SelectOption"));
-        jButtonCreateRide.setText(bundle.getString("MainGUI.CreateRide"));
-        jButtonQueryRides.setText(bundle.getString("MainGUI.QueryRides"));
-        jButtonRequestRide.setText(bundle.getString("MainGUI.RequestRide"));
-        jButtonViewReservations.setText(bundle.getString("MainGUI.ViewReservations"));
-        jButtonAddReview.setText(bundle.getString("MainGUI.AddReview"));
-        jButtonViewNotifications.setText(bundle.getString("MainGUI.ViewNotifications"));
-        jButtonLogin.setText(bundle.getString("MainGUI.Login"));
-        jButtonRegister.setText(bundle.getString("MainGUI.Register"));
+        if (loginDialog.isLoginSuccessful()) {
+            this.loggedInUser = loginDialog.getLoggedInUser();
+            updateUIAfterLogin();
+        }
+    }
+
+    private void openRegisterDialog() {
+        RegisterGUI registerDialog = new RegisterGUI();
+        registerDialog.setVisible(true);
+    }
+
+    private void updateUIAfterLogin() {
+        if (loggedInUser instanceof Traveler) {
+            cardLayout.show(cardsPanel, "TRAVELER");
+        } else if (loggedInUser instanceof Driver) {
+            cardLayout.show(cardsPanel, "DRIVER");
+        }
+        updateUITexts();
+    }
+
+    private void logout() {
+        this.loggedInUser = null;
+        cardLayout.show(cardsPanel, "GUEST");
+        updateUITexts();
+    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> {
+            MainGUI mainGUI = new MainGUI();
+            mainGUI.setVisible(true);
+        });
+    }
+    
+    private void updateUITexts() {
+        setTitle(resourceBundle.getString("MainGUI.MainTitle") + 
+               " - " + (loggedInUser != null ? loggedInUser.getEmail() : resourceBundle.getString("MainGUI.Welcome")));
         
-        jButtonCreateRide.setText(ResourceBundle.getBundle("Etiquetas").getString("MainGUI.CreateRide"));
-        this.setTitle(ResourceBundle.getBundle("Etiquetas").getString("MainGUI.MainTitle") + 
-                     " - Usuario: " + (loggedInUser != null ? loggedInUser.getEmail() : "No autenticado"));
-        
+        updatePanelTexts(guestPanel);
+        updatePanelTexts(travelerPanel);
+        updatePanelTexts(driverPanel);
+        updatePanelTexts(adminPanel);
+    }
+
+    private void updatePanelTexts(JPanel panel) {
+        for (Component comp : panel.getComponents()) {
+            if (comp instanceof JButton) {
+                updateButtonText((JButton) comp);
+            } else if (comp instanceof JLabel) {
+                updateLabelText((JLabel) comp);
+            } else if (comp instanceof JPanel) {
+                updatePanelTexts((JPanel) comp);
+            }
+        }
+    }
+
+    private void updateButtonText(JButton button) {
+        String key = (String) button.getClientProperty("resourceKey");
+        if (key != null) {
+            button.setText(resourceBundle.getString(key));
+        }
+    }
+
+    private void updateLabelText(JLabel label) {
+        String key = (String) label.getClientProperty("resourceKey");
+        if (key != null) {
+            if (key.equals("MainGUI.WelcomeTraveler")) {
+                label.setText(resourceBundle.getString("MainGUI.Welcome") + " " + 
+                            resourceBundle.getString("Traveler"));
+            } else if (key.equals("MainGUI.WelcomeDriver")) {
+                label.setText(resourceBundle.getString("MainGUI.Welcome") + " " + 
+                            resourceBundle.getString("Driver"));
+            } else if (key.equals("MainGUI.WelcomeAdmin")) {
+                label.setText(resourceBundle.getString("MainGUI.Welcome") + " " + 
+                            resourceBundle.getString("MainGUI.UserRoleAdmin"));
+            } else {
+                label.setText(resourceBundle.getString(key));
+            }
+        }
     }
 }
