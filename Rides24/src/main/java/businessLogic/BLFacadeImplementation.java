@@ -4,7 +4,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 
-
+import services.EmailService;
 import java.util.List;
 import java.util.ResourceBundle;
 
@@ -49,11 +49,16 @@ public class BLFacadeImplementation  implements BLFacade {
 	    return null;
 	}
 
-    @Override
+	@Override
     public boolean register(String email, String password, String role) {
         dbManager.open();
         boolean success = dbManager.addUser(email, password, role);
         dbManager.close();
+
+        if (success) {
+            services.EmailService.sendWelcomeEmail(email);
+        }
+
         return success;
     }
     

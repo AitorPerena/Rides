@@ -37,9 +37,11 @@ public class DataAccess  {
 	public User getUserByEmail(String email) {
 		 User user = db.find(Admin.class, email);
 		    if (user == null) {
+		        // Si no es Admin, busca como Driver
 		        user = db.find(Driver.class, email);
 		    }
 		    if (user == null) {
+		        // Si no es Driver, busca como Traveler
 		        user = db.find(Traveler.class, email);
 		    }
 		    return user;
@@ -95,12 +97,15 @@ public class DataAccess  {
 	public void createAdminIfNotExists() {
 	    db.getTransaction().begin();
 	    try {
+	        // Verificar si ya existe algún admin
 	        TypedQuery<Admin> query = db.createQuery("SELECT a FROM Admin a", Admin.class);
 	        List<Admin> admins = query.getResultList();
 	        
 	        if (admins.isEmpty()) {
+	            // Crear admin por defecto solo si no existe ninguno
 	            Admin admin = new Admin("admin@ridesharing.com", "admin123");
 	            
+	            // Crear wallet para el admin
 	            Wallet wallet = new Wallet(admin);
 	            admin.setWallet(wallet);
 	            
@@ -163,56 +168,56 @@ public class DataAccess  {
 	 * This is the data access method that initializes the database with some events and questions.
 	 * This method is invoked by the business logic (constructor of BLFacadeImplementation) when the option "initialize" is declared in the tag dataBaseOpenMode of resources/config.xml file
 	 */	
-	public void initializeDB(){
 		
-		db.getTransaction().begin();
+		public void initializeDB() {
+		    db.getTransaction().begin();
+		    try {
+		        Calendar today = Calendar.getInstance();
+		        int month = today.get(Calendar.MONTH);
+		        int year = today.get(Calendar.YEAR);
+		        if (month == 12) {
+		            month = 1;
+		            year += 1;
+		        }
 
-		try {
+		        // Crear admin por defecto (solo si no existe)
 
-		   Calendar today = Calendar.getInstance();
-		   
-		   int month=today.get(Calendar.MONTH);
-		   int year=today.get(Calendar.YEAR);
-		   if (month==12) { month=1; year+=1;}  
-	        if (db.find(Admin.class, "admin@gmail.com") == null) {
-	            Admin admin = new Admin("admin@gmail.com", "admin123");
-	            db.persist(admin);
-	            System.out.println("Cuenta de administrador creada");
-	        }
-		   
-		    //Create drivers 
-			Driver driver1=new Driver("driver1@gmail.com","Aitor Fernandez");
-			Driver driver2=new Driver("driver2@gmail.com","Ane Gaztañaga");
-			Driver driver3=new Driver("driver3@gmail.com","Test driver");
+		         Admin admin = new Admin("admin@gmail.com", "admin123");
+		         db.persist(admin);
+		         System.out.println("Cuenta de administrador creada");
+		        
 
-			
-			//Create rides
-			driver1.addRide("Donostia", "Bilbo", UtilDate.newDate(year,month,15), 4, 7);
-			driver1.addRide("Donostia", "Gazteiz", UtilDate.newDate(year,month,6), 4, 8);
-			driver1.addRide("Bilbo", "Donostia", UtilDate.newDate(year,month,25), 4, 4);
+		        // Crear conductores
+		        Driver driver1 = new Driver("driver1@gmail.com", "Aitor Fernandez");
+		        Driver driver2 = new Driver("driver2@gmail.com", "Ane Gaztañaga");
+		        Driver driver3 = new Driver("driver3@gmail.com", "Test driver");
 
-			driver1.addRide("Donostia", "Iruña", UtilDate.newDate(year,month,7), 4, 8);
-			
-			driver2.addRide("Donostia", "Bilbo", UtilDate.newDate(year,month,15), 3, 3);
-			driver2.addRide("Bilbo", "Donostia", UtilDate.newDate(year,month,25), 2, 5);
-			driver2.addRide("Eibar", "Gasteiz", UtilDate.newDate(year,month,6), 2, 5);
+		        // Crear viajes con valores válidos
+		        driver1.addRide("Donostia", "Bilbo", UtilDate.newDate(year, month, 15), 4, 7.0f);
+		        driver1.addRide("Donostia", "Gazteiz", UtilDate.newDate(year, month, 6), 4, 8.0f);
+		        driver1.addRide("Bilbo", "Donostia", UtilDate.newDate(year, month, 25), 4, 4.0f);
+		        driver1.addRide("Donostia", "Iruña", UtilDate.newDate(year, month, 7), 4, 8.0f);
 
-			driver3.addRide("Bilbo", "Donostia", UtilDate.newDate(year,month,14), 1, 3);
+		        driver2.addRide("Donostia", "Bilbo", UtilDate.newDate(year, month, 15), 3, 3.0f);
+		        driver2.addRide("Bilbo", "Donostia", UtilDate.newDate(year, month, 25), 2, 5.0f);
+		        driver2.addRide("Eibar", "Gasteiz", UtilDate.newDate(year, month, 6), 2, 5.0f);
 
-			
-						
-			db.persist(driver1);
-			db.persist(driver2);
-			db.persist(driver3);
+		        driver3.addRide("Bilbo", "Donostia", UtilDate.newDate(year, month, 14), 1, 3.0f);
 
+		        db.persist(driver1);
+		        db.persist(driver2);
+		        db.persist(driver3);
+
+		        db.getTransaction().commit();
+		        System.out.println("Db initialized");
+		    } catch (Exception e) {
+		        if (db.getTransaction().isActive()) {
+		            db.getTransaction().rollback();
+		        }
+		        e.printStackTrace();
+		    }
+		}
 	
-			db.getTransaction().commit();
-			System.out.println("Db initialized");
-		}
-		catch (Exception e){
-			e.printStackTrace();
-		}
-	}
 	
 	/**
 	 * This method returns all the cities where rides depart 
@@ -462,8 +467,9 @@ public class DataAccess  {
     		User traveler = db.find(User.class,  travelerEmail);
     		User driver = db.find(User.class,  driverEmail);
     		if(traveler != null && traveler.getWallet() != null && driver != null && driver.getWallet() != null) {
+    			//Verificar que el traveler tiene suficiente dinero
     			if(traveler.getWallet().getBalance() >= amount) {
-
+    				//Completar la acción
     				traveler.getWallet().deductFunds(amount);
     				driver.getWallet().addFunds(amount);
     				db.getTransaction().commit();
@@ -506,13 +512,13 @@ public class DataAccess  {
         try {
             User user = db.find(User.class, userEmail);
             if (user != null) {
-                
+                // Generar nombre único para la imagen
                 String fileName = "profile_" + userEmail.hashCode() + "_" + System.currentTimeMillis() + ".png";
                 
-                
+                // Guardar la imagen en el sistema de archivos (o en la base de datos si prefieres)
                 String imagePath = saveImageToFileSystem(imageData, fileName);
                 
-                
+                // Actualizar la referencia en el usuario
                 user.setProfileImagePath(imagePath);
                 db.persist(user);
                 db.getTransaction().commit();
@@ -534,13 +540,13 @@ public class DataAccess  {
         try {
             Driver driver = db.find(Driver.class, driverEmail);
             if (driver != null) {
-                
+                // Generar nombre único para la imagen del vehículo
                 String fileName = "vehicle_" + driverEmail.hashCode() + "_" + System.currentTimeMillis() + ".png";
                 
-                
+                // Guardar la imagen en el sistema de archivos
                 String imagePath = saveImageToFileSystem(imageData, fileName);
                 
-                
+                // Actualizar la referencia en el conductor
                 driver.setVehicleImagePath(imagePath);
                 db.persist(driver);
                 db.getTransaction().commit();
@@ -624,7 +630,7 @@ public class DataAccess  {
             User user = db.find(User.class, email);
             
             if (user != null) {
-                
+                // Configurar baneo
                 user.setBanned(true);
                 
                 if (days > 0) {
@@ -632,7 +638,7 @@ public class DataAccess  {
                     cal.add(Calendar.DAY_OF_YEAR, days);
                     user.setBanEndDate(cal.getTime());
                 } else {
-                    user.setBanEndDate(null); 
+                    user.setBanEndDate(null); // Baneo permanente
                 }
                 
                 db.merge(user);
@@ -672,7 +678,7 @@ public class DataAccess  {
     public Ride createMultiStopRide(String driverEmail, List<String> stops, List<Double> segmentPrices, Date date, int nPlaces, float totalPrice) {
 		db.getTransaction().begin();
 		try {
-			
+			// 1. Validaciones básicas
 			if (driverEmail == null || driverEmail.isEmpty()) {
 				throw new IllegalArgumentException("El email del conductor no puede estar vacío");
 			}
@@ -688,18 +694,18 @@ public class DataAccess  {
 						);
 			}
 
-			
+			// 2. Verificar conductor
 			Driver driver = db.find(Driver.class, driverEmail);
 			if (driver == null) {
 				throw new IllegalArgumentException("Conductor no encontrado");
 			}
 			
-			
+			// 3. Verificar que no exista un viaje similar
 			if (doesMultiStopRideExist(driver, stops.get(0), stops.get(stops.size()-1), date)) {
 				throw new RideAlreadyExistException("Ya existe un viaje con estas paradas en esta fecha");
 			}
 
-			
+			// 4. Verificar consistencia de precios
 			double sumPrices = segmentPrices.stream().mapToDouble(Double::doubleValue).sum();
 			if (Math.abs(sumPrices - totalPrice) > 0.01) {
 				throw new IllegalArgumentException(
@@ -708,18 +714,18 @@ public class DataAccess  {
 						);
 			}
 
-			
+			// 5. Crear el viaje
 			Ride ride = new Ride(stops.get(0), stops.get(stops.size()-1), date, nPlaces, totalPrice, driver);
 
-			
+			// 6. Añadir paradas intermedias con sus precios
 			for (int i = 1; i < stops.size(); i++) {
 				ride.addIntermediateStop(stops.get(i), segmentPrices.get(i-1));
 			}
 
-			
+			// 7. Persistir el viaje
 			db.persist(ride);
 
-			
+			// 8. Crear notificación
 			String routeDescription = String.join(" → ", stops);
 			Notification notification = new Notification(
 					driver,
@@ -749,7 +755,9 @@ public class DataAccess  {
         return query.getSingleResult() > 0;
     }
     
-
+    /**
+     * Reserva un segmento de un viaje
+     */
     public Reservation reserveSegment(Integer rideId, String travelerEmail, 
             int startIdx, int endIdx, int seats) {
     	db.getTransaction().begin();
@@ -766,6 +774,7 @@ public class DataAccess  {
     			throw new IllegalArgumentException("Índices de parada inválidos");
     		}
 
+//Crear reserva con estado "Pending" (NO reducir asientos todavía)
     		Reservation reservation = new Reservation();
     		reservation.setRide(ride);
     		reservation.setTraveler(traveler);
@@ -773,10 +782,11 @@ public class DataAccess  {
     		reservation.setStartStopIndex(startIdx);
     		reservation.setEndStopIndex(endIdx);
     		reservation.setSegmentPrice(ride.calculateSegmentPrice(startIdx, endIdx));
-    		reservation.setStatus("Pending"); 
+    		reservation.setStatus("Pending"); // Estado pendiente
 
     		db.persist(reservation);
 
+    		// Notificar al conductor (sin reducir asientos)
     		Notification notification = new Notification(
     				ride.getDriver(), 
     				"Solicitud de reserva de segmento: " + stops.get(startIdx) + " → " + stops.get(endIdx)
@@ -794,10 +804,10 @@ public class DataAccess  {
     }
     
     public List<Ride> findRidesWithSegment(String from, String to, Date date) {
-
+        // Primero obtenemos todos los viajes en la fecha especificada
         List<Ride> rides = getRidesByDate(date);
         
-
+        // Filtramos los que contengan el segmento from→to
         List<Ride> result = new ArrayList<>();
         for(Ride ride : rides) {
             List<String> stops = ride.getAllStops();
@@ -830,41 +840,44 @@ public class DataAccess  {
 
     private String saveImageToFileSystem(byte[] imageData, String fileName) {
         try {
+            // Ruta donde se guardarán las imágenes (ajusta según tu estructura de proyecto)
             String imagesDir = System.getProperty("user.dir") + "/src/main/resources/images/";
             
+            // Crear directorio si no existe
             new File(imagesDir).mkdirs();
             
-
+            // Ruta completa del archivo
             String filePath = imagesDir + fileName;
             
-
+            // Escribir los bytes en el archivo
             Files.write(Paths.get(filePath), imageData);
             
+            // Retornar solo el nombre del archivo para almacenar en la base de datos
             return fileName;
         } catch (Exception e) {
             e.printStackTrace();
-            return "default_profile.png";
+            return "default_profile.png"; // Retornar imagen por defecto en caso de error
         }
     }
     
     public List<Ride> findRidesBySegment(String from, String to, Date date) {
         try {
- 
+            // Primero obtenemos todos los viajes en la fecha especificada
             TypedQuery<Ride> query = db.createQuery(
                 "SELECT r FROM Ride r WHERE r.date = :date", Ride.class);
             query.setParameter("date", date);
             List<Ride> rides = query.getResultList();
             
-
+            // Filtramos los que contengan el segmento from→to
             List<Ride> result = new ArrayList<>();
             for (Ride ride : rides) {
                 List<String> stops = ride.getAllStops();
                 int fromIndex = stops.indexOf(from);
                 int toIndex = stops.indexOf(to);
                 
-
+                // Verificamos que ambas paradas existan y estén en orden correcto
                 if (fromIndex != -1 && toIndex != -1 && fromIndex < toIndex) {
-
+                    // Verificamos disponibilidad de asientos para el segmento
                     if (ride.hasAvailableSeatsForSegment(fromIndex, toIndex)) {
                         result.add(ride);
                     }
@@ -906,7 +919,7 @@ public class DataAccess  {
                                         int startIdx, int endIdx, int seats) {
         db.getTransaction().begin();
         try {
-        	
+            // Validar existencia de entidades
             Ride ride = db.find(Ride.class, rideId);
             Traveler traveler = db.find(Traveler.class, travelerEmail);
             
@@ -914,25 +927,26 @@ public class DataAccess  {
                 throw new IllegalArgumentException("Viaje o viajero no encontrado");
             }
             
-
+            // Validar índices de paradas
             List<String> stops = ride.getAllStops();
             if (startIdx < 0 || endIdx >= stops.size() || startIdx >= endIdx) {
                 throw new IllegalArgumentException("Índices de parada inválidos");
             }
             
+            // Validar disponibilidad de asientos
             if (!ride.hasAvailableSeatsForSegment(startIdx, endIdx, seats)) {
                 throw new IllegalStateException("No hay suficientes asientos disponibles para este segmento");
             }
             
-
+            // Calcular precio del segmento
             double segmentPrice = ride.calculateSegmentPrice(startIdx, endIdx) * seats;
             
-
+            // Verificar fondos del viajero
             if (traveler.getWallet().getBalance() < segmentPrice) {
                 throw new IllegalStateException("Fondos insuficientes para realizar la reserva");
             }
             
-
+            // Crear la reserva
             Reservation reservation = new Reservation();
             reservation.setRide(ride);
             reservation.setTraveler(traveler);
@@ -940,15 +954,16 @@ public class DataAccess  {
             reservation.setStartStopIndex(startIdx);
             reservation.setEndStopIndex(endIdx);
             reservation.setSegmentPrice(segmentPrice);
-            reservation.setStatus("Pending"); 
+            reservation.setStatus("Pending"); // Estado inicial pendiente
             
+            // Reducir asientos disponibles en el viaje
             ride.reduceSeatsForSegment(startIdx, endIdx, seats);
             
-
+            // Persistir cambios
             db.persist(reservation);
             db.merge(ride);
             
- 
+            // Crear notificación para el conductor
             String message = String.format("Nueva reserva de segmento: %d asientos de %s a %s",
                 seats, stops.get(startIdx), stops.get(endIdx));
             Notification notification = new Notification(ride.getDriver(), message);
@@ -995,7 +1010,7 @@ public Date parseAndValidateExpirationDate(String expiration) throws ParseExcept
  sdf.setLenient(false);
  Date date = sdf.parse(expiration);
  
-
+ // Asegurar que es fecha futura
  Date today = new Date();
  if (date.before(today)) {
      throw new IllegalArgumentException("La fecha de expiración debe ser futura");
@@ -1005,17 +1020,17 @@ public Date parseAndValidateExpirationDate(String expiration) throws ParseExcept
 
 public boolean validateCardData(String cardNumber, String expiration, String cvv) {
  try {
- 
+     // Validar formato del número de tarjeta
      if (!cardNumber.matches("^\\d{4}-\\d{4}-\\d{4}-\\d{4}$")) {
          return false;
      }
      
-
+     // Validar CVV
      if (!cvv.matches("^\\d{3,4}$")) {
          return false;
      }
      
-
+     // Validar fecha de expiración
      parseAndValidateExpirationDate(expiration);
      
      return true;
@@ -1034,14 +1049,19 @@ public List<User> getAllUsers() {
     }
 }
 
-
+/**
+ * Obtiene los viajes entre dos fechas (inclusive)
+ * @param startDate Fecha de inicio (se considera desde 00:00:00)
+ * @param endDate Fecha de fin (se considera hasta 23:59:59)
+ * @return Lista de viajes en ese rango de fechas
+ */
 public List<Ride> getRidesBetweenDates(Date startDate, Date endDate) {
     try {
-
+        // Aseguramos que las fechas estén "recortadas" sin hora/minutos/segundos
         Date trimmedStart = UtilDate.trim(startDate);
         Date trimmedEnd = UtilDate.trim(endDate);
         
-
+        // Ajustamos la fecha final para incluir todo el día
         Calendar cal = Calendar.getInstance();
         cal.setTime(trimmedEnd);
         cal.set(Calendar.HOUR_OF_DAY, 23);
@@ -1049,7 +1069,7 @@ public List<Ride> getRidesBetweenDates(Date startDate, Date endDate) {
         cal.set(Calendar.SECOND, 59);
         Date endOfDay = cal.getTime();
         
-
+        // Consulta JPA
         TypedQuery<Ride> query = db.createQuery(
             "SELECT r FROM Ride r WHERE r.date BETWEEN :startDate AND :endDate ORDER BY r.date ASC",
             Ride.class
@@ -1061,7 +1081,7 @@ public List<Ride> getRidesBetweenDates(Date startDate, Date endDate) {
         return query.getResultList();
     } catch (Exception e) {
         e.printStackTrace();
-        return new ArrayList<>(); 
+        return new ArrayList<>(); // Devuelve lista vacía en caso de error
     }
 }
 

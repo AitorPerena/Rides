@@ -120,6 +120,7 @@ public abstract class User implements Serializable {
     }
     
     public void updateAverageRating() {
+        // Lógica para calcular el rating promedio
     }
 
     @Override

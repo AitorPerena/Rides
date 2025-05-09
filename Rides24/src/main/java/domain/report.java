@@ -1,7 +1,6 @@
 package domain;
 
 import javax.persistence.*;
-
 import java.util.Date;
 
 @Entity
@@ -73,7 +72,7 @@ public class Report {
 
     public void setResolved(boolean resolved) {
         this.resolved = resolved;
-        if (resolved	) {
+        if (resolved) {
             this.resolutionDate = new Date();
         }
     }
