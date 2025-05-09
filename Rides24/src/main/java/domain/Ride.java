@@ -27,17 +27,16 @@ public class Ride implements Serializable {
     private int nPlaces;
     private Date date;
     private float price;
-    private boolean isMultiStop = false; // Nuevo: indica si es viaje compuesto
+    private boolean isMultiStop = false; 
 
-    // Nuevos campos para viajes compuestos
+  
     @ElementCollection
     @OrderColumn(name="stop_order")
-    private List<String> intermediateStops = new ArrayList<>(); // Paradas intermedias
+    private List<String> intermediateStops = new ArrayList<>(); 
 
     @ElementCollection
     @OrderColumn(name="price_order")
-    private List<Double> segmentPrices = new ArrayList<>(); // Precios entre paradas (€)
-
+    private List<Double> segmentPrices = new ArrayList<>(); 
     @ManyToOne
     @XmlIDREF
     private Driver driver;
@@ -76,8 +75,7 @@ public class Ride implements Serializable {
     }
 
     public double calculateSegmentPrice(int startStopIndex, int endStopIndex) {
-        if (!isMultiStop) return price; // Viaje simple
-        
+        if (!isMultiStop) return price; 
         double total = 0.0;
         for (int i = startStopIndex; i < endStopIndex; i++) {
             total += segmentPrices.get(i);
@@ -96,12 +94,12 @@ public class Ride implements Serializable {
                 throw new IllegalArgumentException("Índices de parada inválidos");
             }
             
-            // Verificar capacidad total del viaje
+
             if (nPlaces < requiredSeats) {
                 return false;
             }
             
-            // Verificar disponibilidad en cada segmento afectado
+
             for (Reservation reservation : reservations) {
                 if (reservationsOverlap(reservation, startIdx, endIdx)) {
                     if (reservation.getSeats() + requiredSeats > nPlaces) {
@@ -121,12 +119,11 @@ public class Ride implements Serializable {
             if (!hasAvailableSeatsForSegment(startIdx, endIdx, seats)) {
                 throw new IllegalStateException("No hay suficientes asientos disponibles");
             }
-            // En un sistema real, aquí registraríamos la reducción de asientos
-            // para el segmento específico
+
         }
         
 
-    // Métodos existentes
+
     public Integer getRideNumber() {
         return rideNumber;
     }
@@ -199,7 +196,6 @@ public class Ride implements Serializable {
         }
     }
 
-    // Nuevos getters y setters
     public boolean isMultiStop() {
         return isMultiStop;
     }

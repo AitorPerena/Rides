@@ -14,35 +14,27 @@ public class Admin extends User {
         super(email, password);
     }
 
-    /**
-     * Método para banear a un usuario por un número de días
-     */
+ 
     public void banUser(User user, int days) {
         if (user == null) return;
         
         user.banUser(days);
     }
     
-    /**
-     * Método para quitar el baneo a un usuario
-     */
+ 
     public void unbanUser(User user) {
         if (user == null) return;
         
         user.unbanUser();
     }
     
-    /**
-     * Método para eliminar permanentemente un usuario
-     */
+
     public boolean deleteUser(User user) {
-        // La implementación real estaría en BLFacade
+        
         return true;
     }
     
-    /**
-     * Método para responder a un reporte
-     */
+
     public void respondToReport(Report report, String response) {
         if (report == null || response == null || response.trim().isEmpty()) return;
         

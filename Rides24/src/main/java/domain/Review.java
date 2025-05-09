@@ -24,8 +24,7 @@ public class Review implements Serializable {
     private String comment; 
     
     @Temporal(TemporalType.TIMESTAMP)
-    private Date date = new Date();  // Asignar fecha actual por defecto
-
+    private Date date = new Date();  
 
     public Review() {
         super();

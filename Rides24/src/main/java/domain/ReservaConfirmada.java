@@ -19,7 +19,7 @@ public class ReservaConfirmada implements Serializable {
     private Ride ride;
 
     private Date fechaConfirmacion;
-    private String estado; // Puede ser "Activa", "Cancelada", etc.
+    private String estado; 
 
     public ReservaConfirmada() {
         super();
