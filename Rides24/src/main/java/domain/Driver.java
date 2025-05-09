@@ -18,6 +18,8 @@ public class Driver extends User implements Serializable {
     @XmlIDREF
     @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.PERSIST)
     private List<Ride> rides = new Vector<Ride>();
+    
+    private String vehicleImagePath = "default_vehicle.png";
 
     public Driver() {
         super();
@@ -37,6 +39,14 @@ public class Driver extends User implements Serializable {
 
     public void setRides(List<Ride> rides) {
         this.rides = rides;
+    }
+    
+    public String getVehicleImagePath() { 
+    	return vehicleImagePath; 
+    }
+    
+    public void setVehicleImagePath(String path) { 
+    	this.vehicleImagePath = path; 
     }
 
     @Override

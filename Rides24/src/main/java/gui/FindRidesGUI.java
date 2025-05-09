@@ -5,6 +5,8 @@ import configuration.UtilDate;
 
 import com.toedter.calendar.JCalendar;
 import domain.Ride;
+import domain.User;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
@@ -13,6 +15,7 @@ import java.text.DateFormat;
 import java.util.*;
 import java.util.List;
 
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 
 public class FindRidesGUI extends JFrame {
@@ -45,7 +48,8 @@ public class FindRidesGUI extends JFrame {
     private String[] columnNamesRides = new String[]{
             ResourceBundle.getBundle("Etiquetas").getString("FindRidesGUI.Driver"),
             ResourceBundle.getBundle("Etiquetas").getString("FindRidesGUI.NPlaces"),
-            ResourceBundle.getBundle("Etiquetas").getString("FindRidesGUI.Price")
+            ResourceBundle.getBundle("Etiquetas").getString("FindRidesGUI.Price"),
+            ResourceBundle.getBundle("Etiquetas").getString("FindRidesGUI.Stops") // Nueva columna
     };
 
     public FindRidesGUI() {
@@ -77,6 +81,36 @@ public class FindRidesGUI extends JFrame {
             }
         };
         tableRides = new JTable(tableModelRides);
+        
+     // Dentro del método que crea la tabla en FindRidesGUI
+        tableRides.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value,
+                    boolean isSelected, boolean hasFocus, int row, int column) {
+                Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                
+                if (column == 0) { // Columna del conductor
+                    c.setForeground(Color.BLUE.darker());
+                    c.setFont(c.getFont().deriveFont(Font.BOLD));
+                }
+                return c;
+            }
+        });
+
+        tableRides.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                int row = tableRides.rowAtPoint(e.getPoint());
+                int col = tableRides.columnAtPoint(e.getPoint());
+                
+                if (row >= 0 && col == 0) { // Click en columna del conductor
+                    // Obtener el objeto Ride de la última columna oculta
+                    Ride selectedRide = (Ride) tableModelRides.getValueAt(row, tableModelRides.getColumnCount() - 1);
+                    User currentUser = MainGUI.getLoggedInUser();
+                    new ProfileGUI(selectedRide.getDriver(), currentUser).setVisible(true);
+                }
+            }
+        });
 
         // Añadir la tabla a un JScrollPane
         JScrollPane scrollPane = new JScrollPane(tableRides);
@@ -177,6 +211,7 @@ public class FindRidesGUI extends JFrame {
                         } else {
                             jLabelEvents.setText(ResourceBundle.getBundle("Etiquetas").getString("FindRidesGUI.Rides") + ": " + dateformat1.format(calendarAct.getTime()));
                         }
+                        
 
                         for (Ride ride : rides) {
                             Vector<Object> row = new Vector<>();
@@ -205,6 +240,23 @@ public class FindRidesGUI extends JFrame {
                 }
             }
         });
+        JButton jButtonViewStops = new JButton(ResourceBundle.getBundle("Etiquetas").getString("FindRidesGUI.ViewStops"));
+        jButtonViewStops.setBounds(new Rectangle(274, 380, 130, 30));
+        jButtonViewStops.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                int selectedRow = tableRides.getSelectedRow();
+                if (selectedRow >= 0) {
+                    Ride selectedRide = (Ride) tableModelRides.getValueAt(selectedRow, 4);
+                    showStopsDialog(selectedRide);
+                } else {
+                    JOptionPane.showMessageDialog(FindRidesGUI.this, 
+                        ResourceBundle.getBundle("Etiquetas").getString("FindRidesGUI.SelectRideFirst"),
+                        "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        });
+        
+        this.getContentPane().add(jButtonViewStops);
 
         this.getContentPane().add(jCalendar1, null);
 
@@ -242,6 +294,15 @@ public class FindRidesGUI extends JFrame {
         calendar.set(Calendar.DAY_OF_MONTH, today);
         calendar.set(Calendar.MONTH, month);
         calendar.set(Calendar.YEAR, year);
+    }
+    private void showStopsDialog(Ride ride) {
+        List<String> stops = ride.getAllStops();
+        String stopsText = String.join(" → ", stops);
+        
+        JOptionPane.showMessageDialog(this, 
+            ResourceBundle.getBundle("Etiquetas").getString("FindRidesGUI.Route") + ":\n" + stopsText,
+            ResourceBundle.getBundle("Etiquetas").getString("FindRidesGUI.RouteDetails"),
+            JOptionPane.INFORMATION_MESSAGE);
     }
 
     private void jButton2_actionPerformed(ActionEvent e) {

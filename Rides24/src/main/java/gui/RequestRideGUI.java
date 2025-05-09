@@ -4,7 +4,6 @@ import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.text.SimpleDateFormat;
-import java.util.ResourceBundle;
 
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -23,17 +22,15 @@ public class RequestRideGUI extends JFrame {
     private JButton jButtonRequest;
     private JSpinner jSpinnerSeats;
     private Traveler traveler;
-    private ResourceBundle bundle;
 
     public RequestRideGUI(Traveler traveler) {
-        this.bundle = ResourceBundle.getBundle("Etiquetas");
         this.traveler = traveler;
-        setTitle(bundle.getString("RequestRideGUI.Title"));
+        setTitle("Solicitar Reserva");
         setSize(400, 200); // Tamaño ajustado
         setLayout(new GridLayout(4, 2)); 
 
         // Lista de viajes disponibles
-        add(new JLabel(bundle.getString("RequestRideGUI.Seats")));
+        add(new JLabel("Selecciona un viaje:"));
         jComboBoxRides = new JComboBox<>();
         BLFacade facade = MainGUI.getBusinessLogic();
         SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy"); 
@@ -46,12 +43,12 @@ public class RequestRideGUI extends JFrame {
         add(jComboBoxRides);
 
         // Selección de número de asientos
-        add(new JLabel(bundle.getString("RequestRideGUI.Seats")));
+        add(new JLabel("Número de asientos:"));
         jSpinnerSeats = new JSpinner(new SpinnerNumberModel(1, 1, 10, 1)); 
         add(jSpinnerSeats);
 
   
-        jButtonRequest = new JButton(bundle.getString("RequestRideGUI.Submit"));
+        jButtonRequest = new JButton("Solicitar Reserva");
         jButtonRequest.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 requestReservation();
@@ -73,12 +70,13 @@ public class RequestRideGUI extends JFrame {
 
             boolean success = facade.requestReservation(selectedRide, traveler, seats);
             if (success) {
-                JOptionPane.showMessageDialog(this, bundle.getString("RequestRideGUI.Success"));
+            	 facade.sendRideReminders(selectedRide.getDate());
+                JOptionPane.showMessageDialog(this, "Reserva solicitada con éxito");
             } else {
-                JOptionPane.showMessageDialog(this, bundle.getString("RequestRideGUI.Error"));
+                JOptionPane.showMessageDialog(this, "Error al solicitar la reserva");
             }
         } else {
-            JOptionPane.showMessageDialog(this, bundle.getString("RequestRideGUI.InvalidSelection"));
+            JOptionPane.showMessageDialog(this, "Selecciona un viaje válido");
         }
     }
 }

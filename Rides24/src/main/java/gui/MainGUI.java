@@ -1,20 +1,20 @@
 package gui;
 
 import javax.swing.*;
-
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import domain.*;
 import businessLogic.BLFacade;
-import java.util.ResourceBundle;
+
 import java.util.Locale;
+import java.util.ResourceBundle;
 
 public class MainGUI extends JFrame {
     private static final long serialVersionUID = 1L;
-
-    private User loggedInUser = null;
-
+    private static BLFacade appFacadeInterface;
+    private static User loggedInUser = null;
+    
     private JPanel mainPanel;
     private CardLayout cardLayout;
     private JPanel cardsPanel;
@@ -25,16 +25,17 @@ public class MainGUI extends JFrame {
     private JPanel driverPanel;
     private JPanel adminPanel;
     private JPanel languagePanel;
-
+    
     private JRadioButton rdbtnEnglish;
     private JRadioButton rdbtnEuskara;
     private JRadioButton rdbtnCastellano;
     private final ButtonGroup buttonGroup = new ButtonGroup();
-    
     private ResourceBundle resourceBundle = ResourceBundle.getBundle("Etiquetas");
 
-    private static BLFacade appFacadeInterface;
     public static BLFacade getBusinessLogic() {
+        if (appFacadeInterface == null) {
+            throw new IllegalStateException("Business logic not initialized");
+        }
         return appFacadeInterface;
     }
 
@@ -51,6 +52,8 @@ public class MainGUI extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(600, 400);
         setLocationRelativeTo(null);
+        
+        createLanguagePanel(); 
 
         // Configurar CardLayout para cambiar entre paneles
         cardLayout = new CardLayout();
@@ -61,7 +64,6 @@ public class MainGUI extends JFrame {
         createTravelerPanel();
         createDriverPanel();
         createAdminPanel();
-        createLanguagePanel();
 
         // Añadir todos los paneles al CardLayout
         cardsPanel.add(guestPanel, "GUEST");
@@ -110,55 +112,61 @@ public class MainGUI extends JFrame {
     }
 
     private void createTravelerPanel() {
-        travelerPanel = new JPanel(new GridLayout(5, 1, 10, 10));
+        travelerPanel = new JPanel(new GridLayout(6, 1, 10, 10));
         travelerPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
         JLabel welcomeLabel = new JLabel(resourceBundle.getString("MainGUI.Welcome") + " " + 
-                                       resourceBundle.getString("Traveler"), JLabel.CENTER);
+                resourceBundle.getString("Traveler"), JLabel.CENTER);
         welcomeLabel.setFont(new Font("Arial", Font.BOLD, 18));
         welcomeLabel.putClientProperty("resourceKey", "MainGUI.WelcomeTraveler");
-        
+
         JButton requestRideButton = createResourceButton("MainGUI.RequestRide");
         requestRideButton.addActionListener(e -> new RequestRideGUI((Traveler) loggedInUser).setVisible(true));
 
         JButton queryRidesButton = createResourceButton("MainGUI.QueryRides");
         queryRidesButton.addActionListener(e -> new FindRidesGUI().setVisible(true));
+
+        JButton walletButton = createResourceButton("MainGUI.Wallet");
+        walletButton.addActionListener(e -> new WalletGUI(loggedInUser).setVisible(true));
+        
+        JButton logoutButton = createResourceButton("MainGUI.CloseSession");
+        logoutButton.addActionListener(e -> logout());
         
         JPanel bottomPanel = new JPanel(new BorderLayout());
-        
-        // Botón de notificaciones
-        JButton notificationsButton = createResourceButton("MainGUI.ViewNotifications");
+
+        ImageIcon bellIcon = new ImageIcon(getClass().getResource("/images/campana.png"));
+        int iconWidth = 24;
+        int iconHeight = 24;
+
+        Image campanaEscalada = bellIcon.getImage().getScaledInstance(iconWidth, iconHeight, Image.SCALE_SMOOTH);
+        ImageIcon iconoCampana = new ImageIcon(campanaEscalada);
+        JButton notificationsButton = new JButton(resourceBundle.getString("MainGUI.ViewNotifications"), iconoCampana);
         notificationsButton.setHorizontalTextPosition(SwingConstants.RIGHT);
         notificationsButton.addActionListener(e -> new ViewNotificationsGUI(loggedInUser).setVisible(true));
         bottomPanel.add(notificationsButton, BorderLayout.WEST);
         
-        // Botón de reseñas
-        JButton reviewsButton = createResourceButton("MainGUI.AddReview");
+        ImageIcon starIcon = new ImageIcon(getClass().getResource("/images/star.png"));
+        Image estrellaEscalada = starIcon.getImage().getScaledInstance(iconWidth, iconHeight, Image.SCALE_SMOOTH);
+        ImageIcon iconoEstrella = new ImageIcon(estrellaEscalada);
+        JButton reviewsButton = new JButton(resourceBundle.getString("MainGUI.AddReview"), iconoEstrella);
         reviewsButton.setHorizontalTextPosition(SwingConstants.LEFT);
         reviewsButton.addActionListener(e -> new AddReviewGUI(loggedInUser).setVisible(true));
         bottomPanel.add(reviewsButton, BorderLayout.EAST);
-
-        travelerPanel.add(bottomPanel, BorderLayout.SOUTH);
-
-        JButton walletButton = createResourceButton("MainGUI.Wallet");
-        walletButton.addActionListener(e -> new WalletGUI(loggedInUser).setVisible(true));
-
-        JButton logoutButton = createResourceButton("MainGUI.CloseSession");
-        logoutButton.addActionListener(e -> logout());
 
         travelerPanel.add(welcomeLabel);
         travelerPanel.add(requestRideButton);
         travelerPanel.add(queryRidesButton);
         travelerPanel.add(walletButton);
         travelerPanel.add(logoutButton);
+        travelerPanel.add(bottomPanel, BorderLayout.SOUTH);
     }
 
     private void createDriverPanel() {
-        driverPanel = new JPanel(new GridLayout(6, 1, 10, 10));
+        driverPanel = new JPanel(new GridLayout(7, 1, 10, 10));
         driverPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
         JLabel welcomeLabel = new JLabel(resourceBundle.getString("MainGUI.Welcome") + " " + 
-                                       resourceBundle.getString("Driver"), JLabel.CENTER);
+                resourceBundle.getString("Driver"), JLabel.CENTER);
         welcomeLabel.setFont(new Font("Arial", Font.BOLD, 18));
         welcomeLabel.putClientProperty("resourceKey", "MainGUI.WelcomeDriver");
         
@@ -176,6 +184,27 @@ public class MainGUI extends JFrame {
 
         JButton logoutButton = createResourceButton("MainGUI.CloseSession");
         logoutButton.addActionListener(e -> logout());
+        
+        JPanel bottomPanel = new JPanel(new BorderLayout());
+        
+        ImageIcon bellIcon = new ImageIcon(getClass().getResource("/images/campana.png"));
+        int iconWidth = 24;
+        int iconHeight = 24;
+
+        Image campanaEscalada = bellIcon.getImage().getScaledInstance(iconWidth, iconHeight, Image.SCALE_SMOOTH);
+        ImageIcon iconoCampana = new ImageIcon(campanaEscalada);
+        JButton notificationsButton = new JButton(resourceBundle.getString("MainGUI.ViewNotifications"), iconoCampana);
+        notificationsButton.setHorizontalTextPosition(SwingConstants.RIGHT);
+        notificationsButton.addActionListener(e -> new ViewNotificationsGUI(loggedInUser).setVisible(true));
+        bottomPanel.add(notificationsButton, BorderLayout.WEST);
+        
+        ImageIcon starIcon = new ImageIcon(getClass().getResource("/images/star.png"));
+        Image estrellaEscalada = starIcon.getImage().getScaledInstance(iconWidth, iconHeight, Image.SCALE_SMOOTH);
+        ImageIcon iconoEstrella = new ImageIcon(estrellaEscalada);
+        JButton reviewsButton = new JButton(resourceBundle.getString("MainGUI.AddReview"), iconoEstrella);
+        reviewsButton.setHorizontalTextPosition(SwingConstants.LEFT);
+        reviewsButton.addActionListener(e -> new AddReviewGUI(loggedInUser).setVisible(true));
+        bottomPanel.add(reviewsButton, BorderLayout.EAST);
 
         driverPanel.add(welcomeLabel);
         driverPanel.add(createRideButton);
@@ -183,19 +212,21 @@ public class MainGUI extends JFrame {
         driverPanel.add(queryRidesButton);
         driverPanel.add(walletButton);
         driverPanel.add(logoutButton);
+        driverPanel.add(bottomPanel);
     }
 
     private void createAdminPanel() {
-        adminPanel = new JPanel(new GridLayout(4, 1, 10, 10));
+        adminPanel = new JPanel(new GridLayout(5, 1, 10, 10));
         adminPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
-        JLabel welcomeLabel = new JLabel(resourceBundle.getString("MainGUI.Welcome") + " " + 
-                                       resourceBundle.getString("MainGUI.UserRoleAdmin"), JLabel.CENTER);
+        JLabel welcomeLabel = new JLabel(resourceBundle.getString("MainGUI.WelcomeAdmin"), JLabel.CENTER);
         welcomeLabel.setFont(new Font("Arial", Font.BOLD, 18));
-        welcomeLabel.putClientProperty("resourceKey", "MainGUI.WelcomeAdmin");
         
         JButton manageUsersButton = createResourceButton("MainGUI.ManageUsers");
-        //manageUsersButton.addActionListener(e -> new ManageUsersGUI().setVisible(true));
+        manageUsersButton.addActionListener(e -> new ManageUsersGUI().setVisible(true));
+
+        JButton viewReportsButton = createResourceButton("MainGUI.ViewReports");
+        viewReportsButton.addActionListener(e -> new ViewUserReportsGUI(null).setVisible(true));
 
         JButton queryRidesButton = createResourceButton("MainGUI.QueryRides");
         queryRidesButton.addActionListener(e -> new FindRidesGUI().setVisible(true));
@@ -205,48 +236,22 @@ public class MainGUI extends JFrame {
 
         adminPanel.add(welcomeLabel);
         adminPanel.add(manageUsersButton);
+        adminPanel.add(viewReportsButton);
         adminPanel.add(queryRidesButton);
         adminPanel.add(logoutButton);
     }
-    
-    private void createLanguagePanel() {
-        languagePanel = new JPanel();
-        rdbtnEnglish = new JRadioButton("English");
-        rdbtnEuskara = new JRadioButton("Euskara");
-        rdbtnCastellano = new JRadioButton("Castellano");
-        
-        Locale currentLocale = Locale.getDefault();
-        if (currentLocale.getLanguage().equals("eus")) {
-            rdbtnEuskara.setSelected(true);
-        } else if (currentLocale.getLanguage().equals("es")) {
-            rdbtnCastellano.setSelected(true);
-        } else {
-            rdbtnEnglish.setSelected(true);
-        }
 
-        buttonGroup.add(rdbtnEnglish);
-        buttonGroup.add(rdbtnEuskara);
-        buttonGroup.add(rdbtnCastellano);
-
-        rdbtnEnglish.addActionListener(e -> changeLanguage(new Locale("en")));
-        rdbtnEuskara.addActionListener(e -> changeLanguage(new Locale("eus")));
-        rdbtnCastellano.addActionListener(e -> changeLanguage(new Locale("es")));
-
-        languagePanel.add(rdbtnEuskara);
-        languagePanel.add(rdbtnCastellano);
-        languagePanel.add(rdbtnEnglish);
-    }
-    
     private void changeLanguage(Locale locale) {
         Locale.setDefault(locale);
         resourceBundle = ResourceBundle.getBundle("Etiquetas", locale);
         updateUITexts();
     }
-
+    
     private void openLoginDialog() {
         LoginGUI loginDialog = new LoginGUI();
         loginDialog.setVisible(true);
         
+        // Cuando se cierra el diálogo de login, verificar si el login fue exitoso
         if (loginDialog.isLoginSuccessful()) {
             this.loggedInUser = loginDialog.getLoggedInUser();
             updateUIAfterLogin();
@@ -263,14 +268,14 @@ public class MainGUI extends JFrame {
             cardLayout.show(cardsPanel, "TRAVELER");
         } else if (loggedInUser instanceof Driver) {
             cardLayout.show(cardsPanel, "DRIVER");
+        } else if (loggedInUser instanceof Admin) {
+            cardLayout.show(cardsPanel, "ADMIN");
         }
-        updateUITexts();
     }
 
     private void logout() {
         this.loggedInUser = null;
         cardLayout.show(cardsPanel, "GUEST");
-        updateUITexts();
     }
 
     public static void main(String[] args) {
@@ -279,7 +284,11 @@ public class MainGUI extends JFrame {
             mainGUI.setVisible(true);
         });
     }
-    
+
+    public static User getLoggedInUser() {
+        return loggedInUser;
+    }
+
     private void updateUITexts() {
         setTitle(resourceBundle.getString("MainGUI.MainTitle") + 
                " - " + (loggedInUser != null ? loggedInUser.getEmail() : resourceBundle.getString("MainGUI.Welcome")));
@@ -312,18 +321,29 @@ public class MainGUI extends JFrame {
     private void updateLabelText(JLabel label) {
         String key = (String) label.getClientProperty("resourceKey");
         if (key != null) {
-            if (key.equals("MainGUI.WelcomeTraveler")) {
-                label.setText(resourceBundle.getString("MainGUI.Welcome") + " " + 
-                            resourceBundle.getString("Traveler"));
-            } else if (key.equals("MainGUI.WelcomeDriver")) {
-                label.setText(resourceBundle.getString("MainGUI.Welcome") + " " + 
-                            resourceBundle.getString("Driver"));
-            } else if (key.equals("MainGUI.WelcomeAdmin")) {
-                label.setText(resourceBundle.getString("MainGUI.Welcome") + " " + 
-                            resourceBundle.getString("MainGUI.UserRoleAdmin"));
-            } else {
-                label.setText(resourceBundle.getString(key));
-            }
+            label.setText(resourceBundle.getString(key));
         }
+    }
+
+    private void createLanguagePanel() {
+        languagePanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        
+        rdbtnEnglish = new JRadioButton("English");
+        rdbtnEuskara = new JRadioButton("Euskara");
+        rdbtnCastellano = new JRadioButton("Castellano");
+        
+        buttonGroup.add(rdbtnEnglish);
+        buttonGroup.add(rdbtnEuskara);
+        buttonGroup.add(rdbtnCastellano);
+        
+        rdbtnCastellano.setSelected(true);
+        
+        rdbtnEnglish.addActionListener(e -> changeLanguage(Locale.ENGLISH));
+        rdbtnEuskara.addActionListener(e -> changeLanguage(new Locale("eus")));
+        rdbtnCastellano.addActionListener(e -> changeLanguage(new Locale("es")));
+        
+        languagePanel.add(rdbtnEnglish);
+        languagePanel.add(rdbtnEuskara);
+        languagePanel.add(rdbtnCastellano);
     }
 }

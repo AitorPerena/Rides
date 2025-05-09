@@ -3,24 +3,23 @@ package gui;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.text.SimpleDateFormat;
 import java.util.List;
-import java.util.ResourceBundle;
-
 import businessLogic.BLFacade;
 import domain.Driver;
 import domain.Reservation;
+import domain.Traveler;
 
 public class ViewReservationsGUI extends JFrame {
     private JTable tableReservas;
     private JButton btnConfirmar;
     private JButton btnRechazar;
     private Driver driver;
-    private DefaultTableModel model;
-    private ResourceBundle bundle;
+    private DefaultTableModel model; // Movemos el modelo como atributo de clase
 
     public ViewReservationsGUI(Driver driver) {
-        this.bundle = ResourceBundle.getBundle("Etiquetas");
         this.driver = driver;
         setTitle("Solicitudes de Reserva - Conductor: " + driver.getEmail());
         setSize(800, 400);
@@ -40,12 +39,27 @@ public class ViewReservationsGUI extends JFrame {
 
         tableReservas = new JTable(model);
         
+        BLFacade facade = MainGUI.getBusinessLogic();
+        List<Reservation> reservas = facade.getReservations(driver);
+        
+        tableReservas.addMouseListener(new MouseAdapter() {
+            public void mouseClicked(MouseEvent e) {
+                int row = tableReservas.rowAtPoint(e.getPoint());
+                int col = tableReservas.columnAtPoint(e.getPoint());
+                
+                if (row >= 0 && col == 1) { // Columna 1 es el email del viajero
+                    Traveler selectedTraveler = reservas.get(row).getTraveler();
+                    new ProfileGUI(selectedTraveler, driver).setVisible(true);
+                }
+            }
+        });
+        
         // Botón de confirmación
-        btnConfirmar = new JButton(bundle.getString("ViewReservationsGUI.Accept"));
+        btnConfirmar = new JButton("Confirmar Reserva");
         btnConfirmar.addActionListener(e -> confirmarReserva());
         
         // Botón de rechazo
-        btnRechazar = new JButton(bundle.getString("ViewReservationsGUI.Decline"));
+        btnRechazar = new JButton("Rechazar Reserva");
         btnRechazar.addActionListener(e -> rechazarReserva());
 
         // Panel inferior

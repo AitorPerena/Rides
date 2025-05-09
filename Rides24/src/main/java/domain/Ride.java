@@ -35,8 +35,8 @@ public class Ride implements Serializable {
     private List<String> intermediateStops = new ArrayList<>(); // Paradas intermedias
 
     @ElementCollection
-    @OrderColumn(name="distance_order")
-    private List<Double> segmentDistances = new ArrayList<>(); // Distancias entre paradas (km)
+    @OrderColumn(name="price_order")
+    private List<Double> segmentPrices = new ArrayList<>(); // Precios entre paradas (€)
 
     @ManyToOne
     @XmlIDREF
@@ -59,12 +59,12 @@ public class Ride implements Serializable {
     }
 
     // Métodos para gestión de paradas intermedias
-    public void addIntermediateStop(String location, double distanceFromPrevious) {
+    public void addIntermediateStop(String location, double priceToNextStop) {
         if (!isMultiStop && !intermediateStops.isEmpty()) {
             isMultiStop = true;
         }
         intermediateStops.add(location);
-        segmentDistances.add(distanceFromPrevious);
+        segmentPrices.add(priceToNextStop);
     }
 
     public List<String> getAllStops() {
@@ -76,21 +76,55 @@ public class Ride implements Serializable {
     }
 
     public double calculateSegmentPrice(int startStopIndex, int endStopIndex) {
-        if (!isMultiStop || startStopIndex >= endStopIndex) {
-            return price; // Viaje simple o índices inválidos
-        }
-
-        double segmentDistance = 0.0;
+        if (!isMultiStop) return price; // Viaje simple
+        
+        double total = 0.0;
         for (int i = startStopIndex; i < endStopIndex; i++) {
-            segmentDistance += segmentDistances.get(i);
+            total += segmentPrices.get(i);
         }
-
-        double totalDistance = segmentDistances.stream()
-                .mapToDouble(Double::doubleValue)
-                .sum();
-
-        return price * (segmentDistance / totalDistance);
+        return total;
     }
+        
+
+        public boolean hasAvailableSeatsForSegment(int startIdx, int endIdx) {
+            return hasAvailableSeatsForSegment(startIdx, endIdx, 1);
+        }
+        
+        public boolean hasAvailableSeatsForSegment(int startIdx, int endIdx, int requiredSeats) {
+            List<String> stops = getAllStops();
+            if (startIdx < 0 || endIdx >= stops.size() || startIdx >= endIdx) {
+                throw new IllegalArgumentException("Índices de parada inválidos");
+            }
+            
+            // Verificar capacidad total del viaje
+            if (nPlaces < requiredSeats) {
+                return false;
+            }
+            
+            // Verificar disponibilidad en cada segmento afectado
+            for (Reservation reservation : reservations) {
+                if (reservationsOverlap(reservation, startIdx, endIdx)) {
+                    if (reservation.getSeats() + requiredSeats > nPlaces) {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+        
+        private boolean reservationsOverlap(Reservation reservation, int startIdx, int endIdx) {
+            return (reservation.getStartStopIndex() < endIdx && 
+                    reservation.getEndStopIndex() > startIdx);
+        }
+        
+        public void reduceSeatsForSegment(int startIdx, int endIdx, int seats) {
+            if (!hasAvailableSeatsForSegment(startIdx, endIdx, seats)) {
+                throw new IllegalStateException("No hay suficientes asientos disponibles");
+            }
+            // En un sistema real, aquí registraríamos la reducción de asientos
+            // para el segmento específico
+        }
+        
 
     // Métodos existentes
     public Integer getRideNumber() {
@@ -174,8 +208,8 @@ public class Ride implements Serializable {
         return intermediateStops;
     }
 
-    public List<Double> getSegmentDistances() {
-        return segmentDistances;
+    public List<Double> getSegmentPrices() {
+        return segmentPrices;
     }
 
     @Override

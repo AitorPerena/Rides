@@ -1,6 +1,7 @@
 package gui;
 
 import javax.swing.*;
+
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -21,11 +22,12 @@ public class AddReviewGUI extends JFrame {
     public AddReviewGUI(User loggedInUser) {
         this.loggedInUser = loggedInUser;
         this.bundle = ResourceBundle.getBundle("Etiquetas");
-        
+
         setTitle(bundle.getString("AddReviewGUI.Title"));
         setSize(400, 300);
         setLayout(new GridLayout(5, 1));
 
+        // ComboBox para usuarios a reseñar
         userComboBox = new JComboBox<>();
         BLFacade facade = MainGUI.getBusinessLogic();
         List<User> users = facade.getAllUsers(); 
@@ -37,15 +39,17 @@ public class AddReviewGUI extends JFrame {
         add(new JLabel(bundle.getString("AddReviewGUI.SelectUser")));
         add(userComboBox);
 
+        // Spinner para puntuación
         ratingSpinner = new JSpinner(new SpinnerNumberModel(5, 1, 5, 1));
         add(new JLabel(bundle.getString("AddReviewGUI.Rating")));
         add(ratingSpinner);
 
-
+        // Área de comentario
         commentArea = new JTextArea();
         add(new JLabel(bundle.getString("AddReviewGUI.Comment")));
         add(new JScrollPane(commentArea));
 
+        // Botón de envío
         submitButton = new JButton(bundle.getString("AddReviewGUI.Submit"));
         submitButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {

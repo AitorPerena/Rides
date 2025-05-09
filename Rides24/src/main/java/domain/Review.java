@@ -1,6 +1,8 @@
 package domain;
 
 import java.io.Serializable;
+import java.util.Date;
+
 import javax.persistence.*;
 
 @Entity
@@ -12,6 +14,7 @@ public class Review implements Serializable {
     private Integer reviewId;
 
     @ManyToOne
+    @JoinColumn(name = "reviewer_email")
     private User reviewer;
 
     @ManyToOne
@@ -19,6 +22,10 @@ public class Review implements Serializable {
 
     private int rating; 
     private String comment; 
+    
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date date = new Date();  // Asignar fecha actual por defecto
+
 
     public Review() {
         super();
@@ -29,6 +36,7 @@ public class Review implements Serializable {
         this.reviewedUser = reviewedUser;
         this.rating = rating;
         this.comment = comment;
+        this.date = new Date();
     }
 
     // Getters y Setters
@@ -70,6 +78,13 @@ public class Review implements Serializable {
 
     public void setComment(String comment) {
         this.comment = comment;
+    }
+    public Date getDate() {
+        return date;
+    }
+    
+    public void setDate(Date date) {
+        this.date = date;
     }
 
     @Override
